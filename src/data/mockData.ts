@@ -1,0 +1,173 @@
+import { Contact, Group } from '../types';
+
+export const mockContacts: Contact[] = [
+  {
+    id: '1',
+    name: 'Jaguar Nick',
+    initials: 'J',
+    lastCallTime: '2 min ago',
+    callType: 'incoming',
+    isFavorite: false,
+  },
+  {
+    id: '2',
+    name: '',
+    phone: '+91 4398434242',
+    initials: '+',
+    lastCallTime: '10 min ago',
+    callType: 'missed',
+    isFavorite: false,
+  },
+  {
+    id: '3',
+    name: 'Vinay Varma',
+    initials: 'V',
+    lastCallTime: '56 min ago',
+    callType: 'outgoing',
+    isFavorite: false,
+  },
+  {
+    id: '4',
+    name: 'Sitarama Shastry',
+    initials: 'S',
+    lastCallTime: '1 hr ago',
+    callType: 'missed',
+    isFavorite: false,
+  },
+  {
+    id: '5',
+    name: 'MS Dhoni',
+    initials: 'M',
+    lastCallTime: '3 hrs ago',
+    callType: 'outgoing',
+    isFavorite: true,
+    label: 'Office',
+  },
+  {
+    id: '6',
+    name: 'Daniel Radcliff',
+    initials: 'D',
+    lastCallTime: '10 hrs ago',
+    callType: 'missed',
+    isFavorite: false,
+  },
+  {
+    id: '7',
+    name: 'Tyrion Lannister',
+    initials: 'T',
+    lastCallTime: '18 hrs ago',
+    callType: 'missed',
+    isFavorite: false,
+  },
+  {
+    id: '8',
+    name: '',
+    phone: '+91 956000002',
+    initials: '+',
+    lastCallTime: 'Yesterday',
+    callType: 'incoming',
+    isFavorite: false,
+  },
+  {
+    id: '9',
+    name: 'Virat Kohli',
+    initials: 'V',
+    lastCallTime: 'Yesterday',
+    callType: 'incoming',
+    isFavorite: true,
+    label: 'Home',
+  },
+];
+
+export const mockGroups: Group[] = [
+  {
+    id: '1',
+    name: 'Family',
+    memberCount: 16,
+    color: 'green',
+  },
+  {
+    id: '2',
+    name: 'Friends',
+    memberCount: 24,
+    color: 'pink',
+  },
+  {
+    id: '3',
+    name: 'New group',
+    memberCount: 0,
+    color: 'blue',
+    isNewGroup: true,
+  },
+];
+
+export const favoriteContacts = mockContacts.filter(contact => contact.isFavorite);
+
+// Extended contact list for contacts tab
+export const allContacts: Contact[] = [
+  ...mockContacts,
+  {
+    id: '10',
+    name: 'Alice Johnson',
+    initials: 'A',
+    lastCallTime: '2 days ago',
+    callType: 'outgoing',
+    isFavorite: false,
+  },
+  {
+    id: '11',
+    name: 'Bob Smith',
+    initials: 'B',
+    lastCallTime: '3 days ago',
+    callType: 'incoming',
+    isFavorite: false,
+  },
+  {
+    id: '12',
+    name: 'Charlie Brown',
+    initials: 'C',
+    lastCallTime: '1 week ago',
+    callType: 'missed',
+    isFavorite: false,
+  },
+  {
+    id: '13',
+    name: 'Diana Prince',
+    initials: 'D',
+    lastCallTime: '1 week ago',
+    callType: 'outgoing',
+    isFavorite: false,
+  },
+  {
+    id: '14',
+    name: 'Emma Watson',
+    initials: 'E',
+    lastCallTime: '2 weeks ago',
+    callType: 'incoming',
+    isFavorite: false,
+  },
+  {
+    id: '15',
+    name: 'Frank Miller',
+    initials: 'F',
+    lastCallTime: '2 weeks ago',
+    callType: 'missed',
+    isFavorite: false,
+  },
+  {
+    id: '16',
+    name: 'Grace Kelly',
+    initials: 'G',
+    lastCallTime: '3 weeks ago',
+    callType: 'outgoing',
+    isFavorite: false,
+  },
+  {
+    id: '17',
+    name: 'Henry Ford',
+    initials: 'H',
+    lastCallTime: '1 month ago',
+    callType: 'incoming',
+    isFavorite: false,
+  },
+];
