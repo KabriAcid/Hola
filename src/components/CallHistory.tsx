@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Trash2 } from 'lucide-react';
+import { Search, Trash, Trash2 } from 'lucide-react';
 import { ContactCard } from './ContactCard';
 import { Contact, CallHistoryTab } from '../types';
 
@@ -93,7 +93,6 @@ export const CallHistory: React.FC<CallHistoryProps> = ({ contacts, onContactCli
                     onClick={() => handleDeleteContact(contact.id)}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 text-accent-blue-500 text-sm font-medium"
                   >
-                    Delete
                   </motion.button>
                 )}
               </div>

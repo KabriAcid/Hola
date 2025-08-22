@@ -5,6 +5,7 @@ import { Phone, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 interface LoginScreenProps {
   onBack: () => void;
   onLogin: (phone: string, password: string) => void;
+  onSignUp?: () => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onBack, onLogin }) => {

@@ -21,7 +21,7 @@ export interface Group {
 export type TabType = "recents" | "contacts" | "settings";
 export type CallHistoryTab = "all" | "missed";
 
-export type AuthScreen = "splash" | "register" | "login" | "app";
+export type AuthScreen = "splash" | "auth" | "register" | "login" | "app";
 export type RegisterMethod = "truecaller" | "phone";
 
 export interface CallState {

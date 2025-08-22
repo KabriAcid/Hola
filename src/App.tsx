@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SplashScreen } from "./components/SplashScreen";
 import { AuthScreen } from "./components/AuthScreen";
@@ -34,7 +34,7 @@ function App() {
   });
 
   const handleSplashComplete = () => {
-    setCurrentScreen("register");
+    setCurrentScreen("auth");
   };
 
   const handleRegister = (method: RegisterMethod, data: string) => {
@@ -128,13 +128,12 @@ function App() {
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
-  // Show auth screens
   if (currentScreen === "register") {
     return (
       <div className="font-dm-sans">
-        <AuthScreen
-          onRegister={() => setCurrentScreen("register")}
-          onLogin={() => setCurrentScreen("login")}
+        <RegisterScreen
+          onRegister={handleRegister}
+          onBack={() => setCurrentScreen("splash")}
         />
       </div>
     );
@@ -144,8 +143,19 @@ function App() {
     return (
       <div className="font-dm-sans">
         <LoginScreen
-          onBack={() => setCurrentScreen("register")}
+          onBack={() => setCurrentScreen("splash")}
           onLogin={handleLogin}
+        />
+      </div>
+    );
+  }
+
+  if (currentScreen === "auth") {
+    return (
+      <div className="font-dm-sans">
+        <AuthScreen
+          onRegister={() => setCurrentScreen("register")}
+          onLogin={() => setCurrentScreen("login")}
         />
       </div>
     );
