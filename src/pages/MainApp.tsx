@@ -291,7 +291,6 @@ export const MainApp: React.FC = () => {
                     className="h-full"
                   >
                     <RecentCallsList
-                      callLogs={callLogs}
                       onCall={handleCall}
                       onMessage={handleSelectConversation}
                     />
