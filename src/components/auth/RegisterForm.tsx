@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { User, Phone, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "../ui/Button";
@@ -6,15 +7,15 @@ import { Input } from "../ui/Input";
 
 interface RegisterFormProps {
   onRegister: (name: string, phone: string, password: string) => Promise<void>;
-  onSwitchToLogin: () => void;
   isLoading: boolean;
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({
   onRegister,
-  onSwitchToLogin,
   isLoading,
 }) => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -62,6 +63,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
     try {
       await onRegister(formData.name, formData.phone, formData.password);
+      navigate('/app/calls');
     } catch (error) {
       setErrors({ general: "Registration failed. Please try again." });
     }
@@ -175,7 +177,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         <p className="text-gray-600">
           Already have an account?{" "}
           <button
-            onClick={onSwitchToLogin}
+            onClick={() => navigate("/")}
             className="text-black font-medium hover:underline"
           >
             Sign in

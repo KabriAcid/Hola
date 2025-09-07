@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Phone, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "../ui/Button";
@@ -8,16 +9,18 @@ import { LoginMethod } from "../../types";
 interface LoginFormProps {
   onLogin: (phone: string, password: string) => Promise<void>;
   onTruecallerLogin: () => Promise<void>;
-  onSwitchToRegister: () => void;
   isLoading: boolean;
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({
   onLogin,
   onTruecallerLogin,
-  onSwitchToRegister,
   isLoading,
 }) => {
+  const navigate = useNavigate();
+
+  // ...existing code...
+
   const [formData, setFormData] = useState({
     phone: "",
     password: "",
@@ -51,6 +54,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
     try {
       await onLogin(formData.phone, formData.password);
+      navigate('/app/calls');
     } catch (error) {
       setErrors({ general: "Invalid phone number or password" });
     }
@@ -190,7 +194,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <p className="text-gray-600">
           Don't have an account?{" "}
           <button
-            onClick={onSwitchToRegister}
+            onClick={() => navigate("/register")}
             className="text-black font-medium hover:underline"
           >
             Sign up

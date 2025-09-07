@@ -93,7 +93,7 @@ export const AuthPage: React.FC = () => {
         <AnimatePresence mode="wait">
           <Routes location={location}>
             <Route
-              path="/"
+              index
               element={
                 <motion.div
                   key="login"
@@ -112,7 +112,7 @@ export const AuthPage: React.FC = () => {
               }
             />
             <Route
-              path="/register"
+              path="register"
               element={
                 <motion.div
                   key="register"
