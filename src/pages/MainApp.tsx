@@ -413,7 +413,7 @@ export const MainApp: React.FC = () => {
             onEndCall={() => setShowIncomingCall(false)}
             onToggleMute={() => {}}
             onToggleSpeaker={() => {}}
-            onAnswerCall={() => setShowIncomingCall(false)}
+            onAnswerCall={() => {}}
             answerLabel="Answer"
             declineLabel="Decline"
             showAnswer={true}
