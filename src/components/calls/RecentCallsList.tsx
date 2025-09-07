@@ -120,49 +120,69 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
             </div>
           </div>
         ) : (
-          callLogs.map((call, index) => (
-            <motion.div
-              key={call.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="flex items-center p-4 bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
-              onClick={() => setSelectedCall(call)}
-            >
-              <Avatar
-                src={call.contactAvatar}
-                alt={call.contactName}
-                size="md"
-              />
-
-              <div className="ml-3 flex-1">
-                <div className="flex items-center">
-                  <h3 className="font-medium text-black">{call.contactName}</h3>
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <span>{formatTime(call.timestamp)}</span>
-                  {call.duration && call.duration > 0 && (
-                    <>
-                      <span className="mx-2">•</span>
-                      <span>{formatDuration(call.duration)}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <button
-                className="p-2 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCall(call.contactPhone, call.contactName);
-                }}
-                aria-label="Call"
-                type="button"
+          callLogs.map((call, index) => {
+            const isMissed = call.type === "missed";
+            return (
+              <motion.div
+                key={call.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className={`flex items-center p-4 border-b border-gray-100 transition-colors cursor-pointer ${
+                  isMissed
+                    ? "bg-red-50 hover:bg-red-100"
+                    : "bg-white hover:bg-gray-50"
+                }`}
+                onClick={() => setSelectedCall(call)}
               >
-                {getCallIcon(call.type)}
-              </button>
-            </motion.div>
-          ))
+                <Avatar
+                  src={call.contactAvatar}
+                  alt={call.contactName}
+                  size="md"
+                />
+
+                <div className="ml-3 flex-1">
+                  <div className="flex items-center">
+                    <h3
+                      className={`font-medium ${
+                        isMissed ? "text-red-700" : "text-black"
+                      }`}
+                    >
+                      {call.contactName}
+                    </h3>
+                    {isMissed && (
+                      <span className="ml-2 px-2 py-0.5 text-xs bg-red-200 text-red-800 rounded-full">
+                        Missed
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <span>{formatTime(call.timestamp)}</span>
+                    {call.duration && call.duration > 0 && !isMissed && (
+                      <>
+                        <span className="mx-2">•</span>
+                        <span>{formatDuration(call.duration)}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  className={`p-2 flex items-center justify-center rounded-full transition-colors ${
+                    isMissed ? "hover:bg-red-200" : "hover:bg-gray-200"
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCall(call.contactPhone, call.contactName);
+                  }}
+                  aria-label="Call"
+                  type="button"
+                >
+                  {getCallIcon(call.type)}
+                </button>
+              </motion.div>
+            );
+          })
         )}
       </div>
 
