@@ -4,7 +4,65 @@ const { body, validationResult } = require("express-validator");
 const xss = require("xss");
 const bcrypt = require("bcryptjs");
 const app = express();
+const http = require("http");
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const cors = require("cors");
 const PORT = process.env.PORT || 5000;
+
+// Allow CORS for frontend (adjust origin as needed)
+app.use(cors({ origin: "*" }));
+
+// Socket.io setup
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Change to your frontend URL in production
+    methods: ["GET", "POST"],
+  },
+});
+
+// In-memory map: phone number -> socket.id
+const userSockets = {};
+
+io.on("connection", (socket) => {
+  console.log("Socket connected:", socket.id);
+
+  // Client should emit 'register' with their phone number after connecting
+  socket.on("register", (phone) => {
+    userSockets[phone] = socket.id;
+    socket.phone = phone;
+    console.log(`User registered: ${phone} -> ${socket.id}`);
+  });
+
+  // Call invite: { from, to, channel }
+  socket.on("call-invite", (payload) => {
+    const { to } = payload;
+    const targetSocketId = userSockets[to];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("call-invite", payload);
+      console.log(`Forwarded call-invite to ${to}`);
+    }
+  });
+
+  // Call accept/decline/end: forward to other party
+  ["call-accept", "call-decline", "call-end"].forEach((event) => {
+    socket.on(event, (payload) => {
+      const { to } = payload;
+      const targetSocketId = userSockets[to];
+      if (targetSocketId) {
+        io.to(targetSocketId).emit(event, payload);
+        console.log(`Forwarded ${event} to ${to}`);
+      }
+    });
+  });
+
+  socket.on("disconnect", () => {
+    if (socket.phone && userSockets[socket.phone] === socket.id) {
+      delete userSockets[socket.phone];
+      console.log(`User disconnected: ${socket.phone}`);
+    }
+  });
+});
 
 // Connect to SQLite database
 const db = new sqlite3.Database("./hola.sqlite", (err) => {
@@ -140,6 +198,6 @@ app.get("/api/call-logs", (req, res) => {
   );
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
