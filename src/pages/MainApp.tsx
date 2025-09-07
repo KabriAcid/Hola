@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BottomNavigation } from "../components/layout/BottomNavigation";
 import { Header } from "../components/layout/Header";
 import { RecentCallsList } from "../components/calls/RecentCallsList";
+import { FloatingIncomingCallButton } from "../components/calls/FloatingIncomingCallButton";
 import { ContactList } from "../components/contacts/ContactList";
 import { ContactForm } from "../components/contacts/ContactForm";
 import { ConversationList } from "../components/messages/ConversationList";
@@ -369,6 +370,14 @@ export const MainApp: React.FC = () => {
         </AnimatePresence>
       </div>
 
+      {/* Floating Incoming Call Button (always visible except in chat) */}
+      {!selectedContactId && (
+        <FloatingIncomingCallButton
+          onClick={() => {
+            /* TODO: trigger incoming call UI */
+          }}
+        />
+      )}
       {!selectedContactId && <BottomNavigation />}
 
       {/* Contact Form Modal */}
