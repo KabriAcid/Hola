@@ -80,7 +80,7 @@ export const AuthPage: React.FC = () => {
       } catch (error) {
         return false;
       }
-      navigate("/login");
+      navigate("/");
       return true;
     }
     return false;

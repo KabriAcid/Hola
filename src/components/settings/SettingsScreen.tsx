@@ -52,7 +52,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const handleLogout = () => {
     onLogout();
-    navigate("/login");
+    navigate("/");
   };
 
   const settingsGroups = [
