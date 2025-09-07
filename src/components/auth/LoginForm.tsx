@@ -54,7 +54,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
     try {
       await onLogin(formData.phone, formData.password);
-      navigate('/app/calls');
+      navigate("/app/calls");
     } catch (error) {
       setErrors({ general: "Invalid phone number or password" });
     }

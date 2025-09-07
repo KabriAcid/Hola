@@ -63,7 +63,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
     try {
       await onRegister(formData.name, formData.phone, formData.password);
-      navigate('/app/calls');
+      navigate("/app/calls");
     } catch (error) {
       setErrors({ general: "Registration failed. Please try again." });
     }

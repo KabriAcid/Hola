@@ -374,7 +374,7 @@ export const MainApp: React.FC = () => {
                   >
                     <SettingsScreen
                       user={user}
-                      onUpdateProfile={updateUser}
+                      onUpdateProfile={async (updates) => { updateUser(updates as any); }}
                       onLogout={logout}
                     />
                   </motion.div>

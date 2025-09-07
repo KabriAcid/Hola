@@ -10,7 +10,7 @@ export const apiService = {
   async login(phone: string, password: string): Promise<User> {
     await delay(1000);
     // Simulate login validation
-    if (phone === '1234567890' && password === 'password') {
+    if (phone === '1234567890' && password === '1234567890') {
       return {
         id: 'user1',
         name: 'John Doe',
