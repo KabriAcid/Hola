@@ -52,7 +52,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const handleLogout = () => {
     onLogout();
-    navigate("/");
+    navigate("/login");
   };
 
   const settingsGroups = [
@@ -235,10 +235,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleUpdateProfile}
-              isLoading={isLoading}
-            >
+            <Button onClick={handleUpdateProfile} isLoading={isLoading}>
               Save Changes
             </Button>
           </div>

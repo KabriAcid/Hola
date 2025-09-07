@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { LoginForm } from "../components/auth/LoginForm";
 import { RegisterForm } from "../components/auth/RegisterForm";
@@ -16,6 +16,7 @@ export const AuthPage: React.FC = () => {
     password: string;
   } | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
 
   // If already authenticated, don't render auth forms (App.tsx will redirect)
@@ -62,12 +63,12 @@ export const AuthPage: React.FC = () => {
     }
   };
 
+  // Only allow '000000' as the valid code
   const handleVerification = async (code: string) => {
     if (!pendingUser) return false;
-
-    try {
-      const isValid = await apiService.verifyCode(pendingUser.phone, code);
-      if (isValid) {
+    if (code === "000000") {
+      // Simulate login after verification
+      try {
         const user = await apiService.register(
           pendingUser.name,
           pendingUser.phone,
@@ -75,12 +76,14 @@ export const AuthPage: React.FC = () => {
         );
         login(user);
         setPendingUser(null);
-        return true;
+        setShowVerification(false);
+      } catch (error) {
+        return false;
       }
-      return false;
-    } catch (error) {
-      return false;
+      navigate("/login");
+      return true;
     }
+    return false;
   };
 
   // Determine which form to show based on location.pathname

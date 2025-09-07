@@ -69,8 +69,15 @@ app.post(
     // Sanitize input
     const phone = xss(req.body.phone);
     const name = xss(req.body.name || "");
-    const username = xss(req.body.username || "");
+    let username = xss(req.body.username || "");
     const password = xss(req.body.password);
+
+    // Auto-generate username if not provided
+    if (!username) {
+      const firstName = name.split(" ")[0] || "user";
+      const last2 = phone.slice(-2);
+      username = `${firstName}${last2}`;
+    }
 
     // Defaults
     const avatar = "default.png";

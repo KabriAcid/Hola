@@ -99,7 +99,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       }
       // Optionally, you can call onRegister to update parent state
       await onRegister(formData.name, formData.phone, formData.password);
-      // Navigation will be handled in AuthPage after authentication
+      // Do not redirect here; wait for verification to complete
     } catch (error) {
       setErrors({ general: "Registration failed. Please try again." });
     }
