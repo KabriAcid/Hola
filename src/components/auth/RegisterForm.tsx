@@ -126,6 +126,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         <Input
           label="Full Name"
           type="text"
+          id="name"
           placeholder="Enter your full name"
           value={formData.name}
           onChange={(e) =>
@@ -138,6 +139,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         <Input
           label="Phone Number"
           type="tel"
+          id="phone_number"
           placeholder="+1 234 567 8900"
           value={formData.phone}
           onChange={(e) =>
@@ -150,6 +152,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         <div className="relative">
           <Input
             label="Password"
+            id="password"
             type={showPassword ? "text" : "password"}
             placeholder="Create a password"
             value={formData.password}
@@ -175,6 +178,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         <div className="relative">
           <Input
             label="Confirm Password"
+            id="confirm_password"
             type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirm your password"
             value={formData.confirmPassword}
@@ -212,14 +216,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
         <Button
           type="submit"
-          className="w-full border border-black text-black bg-transparent hover:bg-gray-50"
+          className="w-full border border-black text-primary bg-transparent hover:bg-gray-900 hover:text-white"
           isLoading={isLoading}
         >
           Create Account
         </Button>
         <Button
           type="button"
-          className="w-full flex items-center justify-center bg-white border border-gray-200 text-black mt-2"
+          className="w-full flex items-center justify-center bg-primary border border-gray-200 text-black mt-2"
           onClick={handleTruecallerRegister}
           isLoading={isTruecallerLoading}
         >
