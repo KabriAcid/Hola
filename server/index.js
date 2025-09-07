@@ -15,6 +15,9 @@ const db = new sqlite3.Database("./hola.sqlite", (err) => {
   }
 });
 
+// Parse JSON bodies for all requests
+app.use(express.json());
+
 // Helper for error responses
 function sendError(res, code, message) {
   return res.status(code).json({ error: message });
@@ -70,9 +73,9 @@ app.post(
     const password = xss(req.body.password);
 
     // Defaults
-    const avatar = "";
-    const bio = "";
-    const country = "NG";
+    const avatar = "default.png";
+    const bio = "Not available";
+    const country = "Nigeria";
     const is_verified = 0;
 
     try {
