@@ -1,28 +1,55 @@
+export interface User {
+  id: string;
+  name: string;
+  phone: string;
+  avatar?: string;
+  isOnline?: boolean;
+}
+
 export interface Contact {
   id: string;
   name: string;
-  phone?: string;
+  phone: string;
   avatar?: string;
-  initials: string;
-  lastCallTime: string;
-  callType: "incoming" | "outgoing" | "missed";
   isFavorite?: boolean;
-  label?: string;
+  isOnline?: boolean;
 }
 
-export interface Group {
+export interface CallLog {
   id: string;
-  name: string;
-  memberCount: number;
-  color: "green" | "pink" | "blue";
-  isNewGroup?: boolean;
+  contactId: string;
+  contactName: string;
+  contactPhone: string;
+  contactAvatar?: string;
+  type: 'incoming' | 'outgoing' | 'missed';
+  duration?: number;
+  timestamp: Date;
 }
 
-export type TabType = "recents" | "contacts" | "settings";
-export type CallHistoryTab = "all" | "missed";
+export interface Message {
+  id: string;
+  contactId: string;
+  content: string;
+  timestamp: Date;
+  isOutgoing: boolean;
+  isRead: boolean;
+}
 
-export type AuthScreen = "splash" | "auth" | "register" | "login" | "app";
-export type RegisterMethod = "truecaller" | "phone";
+export interface Conversation {
+  id: string;
+  contactId: string;
+  contactName: string;
+  contactPhone: string;
+  contactAvatar?: string;
+  lastMessage: Message;
+  unreadCount: number;
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  user: User | null;
+  isLoading: boolean;
+}
 
 export interface CallState {
   isActive: boolean;
@@ -30,5 +57,9 @@ export interface CallState {
   duration: number;
   isMuted: boolean;
   isSpeakerOn: boolean;
-  isVideoCall: boolean;
+  isIncoming: boolean;
 }
+
+export type LoginMethod = 'truecaller' | 'phone';
+
+export type TabType = 'recents' | 'contacts' | 'messages' | 'settings';
