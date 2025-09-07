@@ -143,7 +143,9 @@ export const CallScreen: React.FC<CallScreenProps> = ({
                   onToggleMute();
                 }}
                 className={`p-4 rounded-full transition-colors ${
-                  callState.isMuted
+                  callState.isMuted && pressedBtn === "mute"
+                    ? "bg-red-800"
+                    : callState.isMuted
                     ? "bg-red-600"
                     : pressedBtn === "mute"
                     ? "bg-gray-500"
@@ -165,7 +167,9 @@ export const CallScreen: React.FC<CallScreenProps> = ({
                   onToggleSpeaker();
                 }}
                 className={`p-4 rounded-full transition-colors ${
-                  callState.isSpeakerOn
+                  callState.isSpeakerOn && pressedBtn === "speaker"
+                    ? "bg-blue-800"
+                    : callState.isSpeakerOn
                     ? "bg-blue-600"
                     : pressedBtn === "speaker"
                     ? "bg-blue-400"
@@ -196,9 +200,8 @@ export const CallScreen: React.FC<CallScreenProps> = ({
                 }`}
                 whileTap={{ scale: 0.95 }}
               >
-                <PhoneOff className="w-8 h-8" />
-                <span className="ml-2 font-semibold text-base hidden sm:inline">
-                  {declineLabel}
+                <span className="flex items-center justify-center">
+                  <PhoneOff className="w-8 h-8" />
                 </span>
               </motion.button>
 
@@ -215,9 +218,8 @@ export const CallScreen: React.FC<CallScreenProps> = ({
                   }`}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Phone className="w-8 h-8" />
-                  <span className="ml-2 font-semibold text-base hidden sm:inline">
-                    {answerLabel}
+                  <span className="flex items-center justify-center">
+                    <Phone className="w-8 h-8" />
                   </span>
                 </motion.button>
               )}
@@ -237,7 +239,9 @@ export const CallScreen: React.FC<CallScreenProps> = ({
               }`}
               whileTap={{ scale: 0.95 }}
             >
-              <PhoneOff className="w-8 h-8" />
+              <span className="flex items-center justify-center">
+                <PhoneOff className="w-8 h-8" />
+              </span>
             </motion.button>
           )}
         </motion.div>
