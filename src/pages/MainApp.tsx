@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Routes,
   Route,
@@ -20,6 +20,7 @@ import { CallScreen } from "../components/calls/CallScreen";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
 import { useCall } from "../hooks/useCall";
+import { getSocket } from "../socket";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { apiService } from "../services/api";
 import { Contact, CallLog, Conversation, Message } from "../types";
@@ -50,6 +51,49 @@ export const MainApp: React.FC = () => {
     toggleSpeaker,
     answerCall,
   } = useCall();
+
+  // Socket.io setup
+  const socketRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const socket = getSocket();
+    socketRef.current = socket;
+    if (!socket.connected) socket.connect();
+    // Register user by phone number
+    socket.emit("register", user.phone);
+
+    // Incoming call invite
+    socket.on("call-invite", (payload) => {
+      // payload: { from, to, channel, ... }
+      // Find contact by phone
+      const contact = contacts.find((c) => c.phone === payload.from) || {
+        id: "temp",
+        name: payload.from,
+        phone: payload.from,
+      };
+      startCall(contact, true);
+    });
+
+    // Call accept/decline/end events
+    socket.on("call-accept", (payload) => {
+      // Optionally show UI feedback
+    });
+    socket.on("call-decline", (payload) => {
+      endCall();
+    });
+    socket.on("call-end", (payload) => {
+      endCall();
+    });
+
+    return () => {
+      socket.off("call-invite");
+      socket.off("call-accept");
+      socket.off("call-decline");
+      socket.off("call-end");
+    };
+    // eslint-disable-next-line
+  }, [user]);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -108,11 +152,25 @@ export const MainApp: React.FC = () => {
       phone,
     };
     startCall(contact);
-    // No call log storage
+    // Send call-invite via socket
+    if (user && socketRef.current) {
+      const channel = `call_${user.phone}_${phone}_${Date.now()}`;
+      socketRef.current.emit("call-invite", {
+        from: user.phone,
+        to: phone,
+        channel,
+      });
+    }
   };
 
   const handleEndCall = () => {
-    // No call log update
+    // Send call-end via socket
+    if (user && callState.contact && socketRef.current) {
+      socketRef.current.emit("call-end", {
+        from: user.phone,
+        to: callState.contact.phone,
+      });
+    }
     endCall();
   };
 
