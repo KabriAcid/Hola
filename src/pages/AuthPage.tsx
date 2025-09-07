@@ -23,7 +23,13 @@ export const AuthPage: React.FC = () => {
   } | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/app/calls", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (phone: string, password: string) => {
     setIsLoading(true);

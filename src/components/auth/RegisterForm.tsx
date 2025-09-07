@@ -8,11 +8,13 @@ import { Input } from "../ui/Input";
 interface RegisterFormProps {
   onRegister: (name: string, phone: string, password: string) => Promise<void>;
   isLoading: boolean;
+  onSwitchToLogin?: () => void;
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({
   onRegister,
   isLoading,
+  onSwitchToLogin,
 }) => {
   const navigate = useNavigate();
 
@@ -177,7 +179,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         <p className="text-gray-600">
           Already have an account?{" "}
           <button
-            onClick={() => navigate("/")}
+            onClick={onSwitchToLogin}
             className="text-black font-medium hover:underline"
           >
             Sign in

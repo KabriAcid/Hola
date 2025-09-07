@@ -10,12 +10,14 @@ interface LoginFormProps {
   onLogin: (phone: string, password: string) => Promise<void>;
   onTruecallerLogin: () => Promise<void>;
   isLoading: boolean;
+  onSwitchToRegister?: () => void;
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({
   onLogin,
   onTruecallerLogin,
   isLoading,
+  onSwitchToRegister,
 }) => {
   const navigate = useNavigate();
 
@@ -54,7 +56,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
     try {
       await onLogin(formData.phone, formData.password);
-      navigate("/app/calls");
+      // Navigation will be handled in AuthPage after authentication
     } catch (error) {
       setErrors({ general: "Invalid phone number or password" });
     }
@@ -194,7 +196,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <p className="text-gray-600">
           Don't have an account?{" "}
           <button
-            onClick={() => navigate("/register")}
+            onClick={onSwitchToRegister}
             className="text-black font-medium hover:underline"
           >
             Sign up
