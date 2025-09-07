@@ -63,7 +63,7 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-none">
         {callLogs.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center">
@@ -170,7 +170,6 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                 <Phone className="w-5 h-5" />
                 <span>Call</span>
               </motion.button>
-
             </div>
           </div>
         )}

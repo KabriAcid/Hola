@@ -277,7 +277,7 @@ export const MainApp: React.FC = () => {
     <div className="flex flex-col h-screen bg-white pb-16">
       <Header title={getHeaderTitle()} {...getHeaderProps()} />
 
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="flex-1 overflow-y-auto pb-20 scrollbar-none">
         <AnimatePresence mode="wait">
           {selectedContactId && selectedContact ? (
             <motion.div

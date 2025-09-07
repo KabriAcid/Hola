@@ -1,5 +1,5 @@
 import React from "react";
-import { Route, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { LoginForm } from "../components/auth/LoginForm";
 import { RegisterForm } from "../components/auth/RegisterForm";
@@ -15,15 +15,11 @@ export const AuthPage: React.FC = () => {
     phone: string;
     password: string;
   } | null>(null);
-  const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
 
-  React.useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/app/calls", { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+  // If already authenticated, don't render auth forms (App.tsx will redirect)
+  if (isAuthenticated) return null;
 
   const handleLogin = async (phone: string, password: string) => {
     setIsLoading(true);
@@ -104,7 +100,7 @@ export const AuthPage: React.FC = () => {
             >
               <RegisterForm
                 onRegister={handleRegister}
-                onSwitchToLogin={() => navigate("/")}
+                onSwitchToLogin={() => window.location.replace("/")}
                 isLoading={isLoading}
               />
             </motion.div>
@@ -119,7 +115,7 @@ export const AuthPage: React.FC = () => {
               <LoginForm
                 onLogin={handleLogin}
                 onTruecallerLogin={handleTruecallerLogin}
-                onSwitchToRegister={() => navigate("/register")}
+                onSwitchToRegister={() => window.location.replace("/register")}
                 isLoading={isLoading}
               />
             </motion.div>
