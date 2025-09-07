@@ -274,10 +274,10 @@ export const MainApp: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-screen bg-white pb-16">
       <Header title={getHeaderTitle()} {...getHeaderProps()} />
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto pb-20">
         <AnimatePresence mode="wait">
           {selectedContactId && selectedContact ? (
             <motion.div
@@ -374,7 +374,9 @@ export const MainApp: React.FC = () => {
                   >
                     <SettingsScreen
                       user={user}
-                      onUpdateProfile={async (updates) => { updateUser(updates as any); }}
+                      onUpdateProfile={async (updates) => {
+                        updateUser(updates as any);
+                      }}
                       onLogout={logout}
                     />
                   </motion.div>
