@@ -121,7 +121,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
         </motion.button>
 
         <div className="text-center mb-12">
-          <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-accent-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
             <Phone className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-3">
@@ -134,7 +134,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
 
         <div className="space-y-4">
           <motion.button
-            whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleTruecallerRegister}
             disabled={isLoading}
@@ -164,10 +163,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           </div>
 
           <motion.button
-            whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setSelectedMethod("phone")}
-            className="w-full border-2 border-gray-200 text-gray-700 p-6 rounded-2xl font-semibold text-lg hover:border-primary-300 hover:bg-primary-50 transition-all"
+            className="w-full border-2 border-gray-200 text-gray-700 py-4 rounded-2xl font-semibold text-lg hover:border-gray-500 transition-all"
           >
             <div className="flex items-center justify-center space-x-3">
               <Phone className="w-6 h-6" />

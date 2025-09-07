@@ -15,16 +15,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-br from-primary-50 to-accent-blue-50 min-h-screen flex items-center justify-center p-6"
+      className="min-h-screen flex items-center justify-center p-6"
     >
       <div className="max-w-md mx-auto text-center">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="w-24 h-24 bg-gradient-to-br from-primary-500 to-accent-blue-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl"
+          className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl"
         >
-          <Phone className="w-12 h-12 text-white" />
+          <Phone className="w-12 h-12 text-black" />
         </motion.div>
 
         <motion.h1
@@ -50,10 +50,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
-            whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={onRegister}
-            className="w-full bg-primary-500 text-white py-4 rounded-2xl font-semibold text-lg hover:bg-primary-600 transition-all shadow-lg hover:shadow-xl"
+            className="w-full bg-black text-white py-4 rounded-2xl font-semibold text-lg hover:bg-gray-900 transition-all shadow-lg hover:shadow-xl"
           >
             <div className="flex items-center justify-center space-x-2">
               <span>Get Started</span>
@@ -65,10 +64,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6 }}
-            whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={onLogin}
-            className="w-full border-2 border-gray-200 text-gray-700 py-4 rounded-2xl font-semibold text-lg hover:border-primary-300 hover:bg-primary-50 transition-all"
+            className="w-full border-2 border-gray-200 text-gray-700 py-4 rounded-2xl font-semibold text-lg hover:border-gray-500 transition-all"
           >
             I already have an account
           </motion.button>

@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Phone } from "lucide-react";
-
 interface SplashScreenProps {
   onComplete: () => void;
 }
@@ -20,7 +19,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="bg-gradient-to-br from-primary-500 to-accent-blue-600 min-h-screen flex items-center justify-center"
+      className="min-h-screen flex items-center justify-center"
     >
       <div className="text-center">
         <motion.div

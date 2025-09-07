@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SplashScreen } from "./components/SplashScreen";
 import { AuthScreen } from "./components/AuthScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
 import { LoginScreen } from "./components/LoginScreen";
@@ -33,9 +32,7 @@ function App() {
     isVideoCall: false,
   });
 
-  const handleSplashComplete = () => {
-    setCurrentScreen("auth");
-  };
+  const handleSplashComplete = () => {}; // Removed logic for splash screen
 
   const handleRegister = (method: RegisterMethod, data: string) => {
     console.log("Registration:", method, data);
@@ -121,11 +118,6 @@ function App() {
         onToggleVideo={handleToggleVideo}
       />
     );
-  }
-
-  // Show splash screen
-  if (currentScreen === "splash") {
-    return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
   if (currentScreen === "register") {
