@@ -6,7 +6,7 @@ export default {
       colors: {
         primary: "#000000",
         secondary: "#ffffff",
-        border: "#e5e5e5", // Custom border color
+        border: "#e5e5e5",
         gray: {
           50: "#fafafa",
           100: "#f5f5f5",

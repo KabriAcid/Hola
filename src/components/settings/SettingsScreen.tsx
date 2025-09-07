@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   User,
   Bell,
@@ -10,12 +10,12 @@ import {
   ChevronRight,
   Edit,
   Camera,
-} from 'lucide-react';
-import { User as UserType } from '../../types';
-import { Avatar } from '../ui/Avatar';
-import { Button } from '../ui/Button';
-import { Modal } from '../ui/Modal';
-import { Input } from '../ui/Input';
+} from "lucide-react";
+import { User as UserType } from "../../types";
+import { Avatar } from "../ui/Avatar";
+import { Button } from "../ui/Button";
+import { Modal } from "../ui/Modal";
+import { Input } from "../ui/Input";
 
 interface SettingsScreenProps {
   user: UserType;
@@ -32,7 +32,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState({
     name: user.name,
-    avatar: user.avatar || '',
+    avatar: user.avatar || "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -44,7 +44,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       await onUpdateProfile(profileData);
       setShowProfileModal(false);
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      console.error("Failed to update profile:", error);
     } finally {
       setIsLoading(false);
     }
@@ -52,55 +52,55 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const handleLogout = () => {
     onLogout();
-    navigate('/');
+    navigate("/");
   };
 
   const settingsGroups = [
     {
-      title: 'Account',
+      title: "Account",
       items: [
         {
           icon: User,
-          label: 'Edit Profile',
+          label: "Edit Profile",
           action: () => setShowProfileModal(true),
           showArrow: true,
         },
       ],
     },
     {
-      title: 'Preferences',
+      title: "Preferences",
       items: [
         {
           icon: Bell,
-          label: 'Notifications',
+          label: "Notifications",
           action: () => setNotifications(!notifications),
           toggle: notifications,
         },
         {
           icon: Moon,
-          label: 'Dark Mode',
+          label: "Dark Mode",
           action: () => setDarkMode(!darkMode),
           toggle: darkMode,
         },
       ],
     },
     {
-      title: 'Privacy & Security',
+      title: "Privacy & Security",
       items: [
         {
           icon: Shield,
-          label: 'Privacy Settings',
-          action: () => console.log('Privacy settings'),
+          label: "Privacy Settings",
+          action: () => console.log("Privacy settings"),
           showArrow: true,
         },
       ],
     },
     {
-      title: 'Account Actions',
+      title: "Account Actions",
       items: [
         {
           icon: LogOut,
-          label: 'Sign Out',
+          label: "Sign Out",
           action: handleLogout,
           danger: true,
         },
@@ -118,11 +118,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           className="bg-white p-6 mb-6"
         >
           <div className="flex items-center space-x-4">
-            <Avatar
-              src={user.avatar}
-              alt={user.name}
-              size="xl"
-            />
+            <Avatar src={user.avatar} alt={user.name} size="xl" />
             <div className="flex-1">
               <h2 className="text-xl font-semibold text-black">{user.name}</h2>
               <p className="text-gray-600">{user.phone}</p>
@@ -151,7 +147,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 {group.title}
               </h3>
             </div>
-            
+
             {group.items.map((item, itemIndex) => {
               const Icon = item.icon;
               return (
@@ -159,25 +155,29 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   key={item.label}
                   onClick={item.action}
                   className={`w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${
-                    item.danger ? 'text-red-600' : 'text-black'
-                  } ${itemIndex < group.items.length - 1 ? 'border-b border-gray-100' : ''}`}
+                    item.danger ? "text-red-600" : "text-black"
+                  } ${
+                    itemIndex < group.items.length - 1
+                      ? "border-b border-gray-100"
+                      : ""
+                  }`}
                   whileTap={{ scale: 0.98 }}
                 >
                   <div className="flex items-center space-x-3">
                     <Icon className="w-5 h-5" />
                     <span className="font-medium">{item.label}</span>
                   </div>
-                  
+
                   <div className="flex items-center">
                     {item.toggle !== undefined && (
                       <div
                         className={`w-12 h-6 rounded-full transition-colors ${
-                          item.toggle ? 'bg-black' : 'bg-gray-300'
+                          item.toggle ? "bg-black" : "bg-gray-300"
                         }`}
                       >
                         <div
                           className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${
-                            item.toggle ? 'translate-x-6' : 'translate-x-0.5'
+                            item.toggle ? "translate-x-6" : "translate-x-0.5"
                           } mt-0.5`}
                         />
                       </div>
@@ -222,7 +222,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             label="Name"
             type="text"
             value={profileData.name}
-            onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+            onChange={(e) =>
+              setProfileData({ ...profileData, name: e.target.value })
+            }
             icon={<User className="w-5 h-5" />}
           />
 

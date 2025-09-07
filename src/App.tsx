@@ -27,12 +27,22 @@ function App() {
       <div className="App">
         <AnimatePresence mode="wait">
           <Routes>
-            {/* Public route for authentication */}
+            {/* Public routes for authentication */}
             <Route
               path="/"
               element={
                 !isAuthenticated ? (
                   <AuthPage key="auth-page" />
+                ) : (
+                  <Navigate to="/app" replace />
+                )
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                !isAuthenticated ? (
+                  <AuthPage key="auth-page-register" />
                 ) : (
                   <Navigate to="/app" replace />
                 )
