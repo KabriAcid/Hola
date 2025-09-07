@@ -125,6 +125,21 @@ app.post(
   }
 );
 
+// Get all call logs
+app.get("/api/call-logs", (req, res) => {
+  db.all(
+    "SELECT id, contact_name, contact_phone, contact_avatar, type, timestamp, duration FROM call_logs ORDER BY timestamp DESC",
+    [],
+    (err, rows) => {
+      if (err) {
+        console.error(err);
+        return sendError(res, 500, "Database error.");
+      }
+      res.json(rows);
+    }
+  );
+});
+
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });

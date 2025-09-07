@@ -10,18 +10,38 @@ import {
 import { CallLog } from "../../types";
 import { Avatar } from "../ui/Avatar";
 import { Modal } from "../ui/Modal";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
 
 interface RecentCallsListProps {
-  callLogs: CallLog[];
   onCall: (phone: string, name: string) => void;
   onMessage: (contactId: string) => void;
 }
 
 export const RecentCallsList: React.FC<RecentCallsListProps> = ({
-  callLogs,
   onCall,
   onMessage,
 }) => {
+  const [callLogs, setCallLogs] = React.useState<CallLog[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetch("/api/call-logs")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch call logs");
+        return res.json();
+      })
+      .then((data) => {
+        setCallLogs(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message || "Error loading call logs");
+        setLoading(false);
+      });
+  }, []);
   const [selectedCall, setSelectedCall] = React.useState<CallLog | null>(null);
 
   const getCallIcon = (type: CallLog["type"]) => {
@@ -64,7 +84,15 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
   return (
     <>
       <div className="flex-1 overflow-y-auto scrollbar-none">
-        {callLogs.length === 0 ? (
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : error ? (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center text-red-500">{error}</div>
+          </div>
+        ) : callLogs.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
