@@ -40,10 +40,11 @@ export const MainApp: React.FC = () => {
     "hola_contacts",
     []
   );
-  const [callLogs, setCallLogs] = useLocalStorage<CallLog[]>(
-    "hola_call_logs",
-    []
-  );
+  // const [callLogs, setCallLogs] = useLocalStorage<CallLog[]>(
+  //   "hola_call_logs",
+  //   []
+  // );
+  const callLogs: CallLog[] = [];
   const [conversations, setConversations] = useLocalStorage<Conversation[]>(
     "hola_conversations",
     []
@@ -73,7 +74,7 @@ export const MainApp: React.FC = () => {
           ]);
 
         if (contacts.length === 0) setContacts(contactsData);
-        if (callLogs.length === 0) setCallLogs(callLogsData);
+        // if (callLogs.length === 0) setCallLogs(callLogsData);
         if (conversations.length === 0) setConversations(conversationsData);
       } catch (error) {
         console.error("Failed to load data:", error);
@@ -90,31 +91,11 @@ export const MainApp: React.FC = () => {
       phone,
     };
     startCall(contact);
-
-    // Add to call logs
-    const newCallLog: CallLog = {
-      id: `call_${Date.now()}`,
-      contactId: contact.id,
-      contactName: contact.name,
-      contactPhone: contact.phone,
-      contactAvatar: contact.avatar,
-      type: "outgoing",
-      timestamp: new Date(),
-    };
-    setCallLogs((prev) => [newCallLog, ...prev]);
+    // No call log storage
   };
 
   const handleEndCall = () => {
-    if (callState.contact && callState.duration > 0) {
-      // Update call log with duration
-      setCallLogs((prev) =>
-        prev.map((log) =>
-          log.contactId === callState.contact?.id && !log.duration
-            ? { ...log, duration: callState.duration }
-            : log
-        )
-      );
-    }
+    // No call log update
     endCall();
   };
 
