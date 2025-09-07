@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { User, AuthState } from '../types';
+import { useState, useEffect } from "react";
+import { User, AuthState } from "../types";
 
-const STORAGE_KEY = 'hola_auth';
+const STORAGE_KEY = "hola_auth";
 
 export const useAuth = () => {
   const [authState, setAuthState] = useState<AuthState>({
@@ -16,17 +16,22 @@ export const useAuth = () => {
     if (storedAuth) {
       try {
         const parsedAuth = JSON.parse(storedAuth);
-        setAuthState({
-          isAuthenticated: true,
-          user: parsedAuth.user,
-          isLoading: false,
-        });
+        if (parsedAuth && parsedAuth.user) {
+          setAuthState({
+            isAuthenticated: true,
+            user: parsedAuth.user,
+            isLoading: false,
+          });
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+          setAuthState((prev) => ({ ...prev, isLoading: false }));
+        }
       } catch (error) {
         localStorage.removeItem(STORAGE_KEY);
-        setAuthState(prev => ({ ...prev, isLoading: false }));
+        setAuthState((prev) => ({ ...prev, isLoading: false }));
       }
     } else {
-      setAuthState(prev => ({ ...prev, isLoading: false }));
+      setAuthState((prev) => ({ ...prev, isLoading: false }));
     }
   }, []);
 
@@ -52,7 +57,7 @@ export const useAuth = () => {
   const updateUser = (updatedUser: User) => {
     const authData = { user: updatedUser, timestamp: Date.now() };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
-    setAuthState(prev => ({
+    setAuthState((prev) => ({
       ...prev,
       user: updatedUser,
     }));
