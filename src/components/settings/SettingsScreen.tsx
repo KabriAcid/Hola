@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   User,
@@ -27,6 +28,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onUpdateProfile,
   onLogout,
 }) => {
+  const navigate = useNavigate();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState({
     name: user.name,
@@ -46,6 +48,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    onLogout();
+    navigate('/');
   };
 
   const settingsGroups = [
@@ -94,7 +101,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         {
           icon: LogOut,
           label: 'Sign Out',
-          action: onLogout,
+          action: handleLogout,
           danger: true,
         },
       ],
