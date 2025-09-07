@@ -15,7 +15,7 @@ import { ContactList } from "../components/contacts/ContactList";
 import { ContactForm } from "../components/contacts/ContactForm";
 import { ConversationList } from "../components/messages/ConversationList";
 import { ChatScreen } from "../components/messages/ChatScreen";
-import { SettingsScreen } from "../components/settings/SettingsScreen";
+import { SettingsPage } from "../components/settings/SettingsPage";
 import { CallScreen } from "../components/calls/CallScreen";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
@@ -427,7 +427,7 @@ export const MainApp: React.FC = () => {
                     exit={{ opacity: 0, y: -20 }}
                     className="h-full"
                   >
-                    <SettingsScreen
+                    <SettingsPage
                       user={user}
                       onUpdateProfile={async (updates) => {
                         updateUser(updates as any);

@@ -68,8 +68,6 @@ io.on("connection", (socket) => {
 const db = new sqlite3.Database("./hola.sqlite", (err) => {
   if (err) {
     console.error("Failed to connect to SQLite database:", err.message);
-  } else {
-    console.log("Connected to SQLite database.");
   }
 });
 
@@ -99,7 +97,25 @@ function dbRun(sql, params) {
   });
 }
 
-// ...existing code...
+// User fields for consistent response
+const USER_FIELDS = [
+  "id",
+  "phone",
+  "name",
+  "username",
+  "avatar",
+  "bio",
+  "country",
+  "is_verified",
+];
+
+function userToResponse(user) {
+  const result = {};
+  USER_FIELDS.forEach((f) => {
+    if (user[f] !== undefined) result[f] = user[f];
+  });
+  return result;
+}
 
 // Registration endpoint
 app.post(
@@ -118,32 +134,27 @@ app.post(
       .withMessage("Password must be at least 6 characters"),
   ],
   async (req, res) => {
-    console.log("Register request body:", req.body);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendError(res, 400, errors.array()[0].msg);
-    }
-
-    // Sanitize input
-    const phone = xss(req.body.phone);
-    const name = xss(req.body.name || "");
-    let username = xss(req.body.username || "");
-    const password = xss(req.body.password);
-
-    // Auto-generate username if not provided
-    if (!username) {
-      const firstName = name.split(" ")[0] || "user";
-      const last2 = phone.slice(-2);
-      username = `${firstName}${last2}`;
-    }
-
-    // Defaults
-    const avatar = "default.png";
-    const bio = "Not available";
-    const country = "Nigeria";
-    const is_verified = 0;
-
     try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return sendError(res, 400, errors.array()[0].msg);
+      }
+      // Sanitize input
+      const phone = xss(req.body.phone);
+      const name = xss(req.body.name || "");
+      let username = xss(req.body.username || "");
+      const password = xss(req.body.password);
+      // Auto-generate username if not provided
+      if (!username) {
+        const firstName = name.split(" ")[0] || "user";
+        const last2 = phone.slice(-2);
+        username = `${firstName}${last2}`;
+      }
+      // Defaults
+      const avatar = "default.png";
+      const bio = "Not available";
+      const country = "Nigeria";
+      const is_verified = 0;
       if (await dbGet("SELECT id FROM users WHERE phone = ?", [phone])) {
         return sendError(res, 409, "Phone already exists.");
       }
@@ -153,7 +164,6 @@ app.post(
       ) {
         return sendError(res, 409, "Username already exists.");
       }
-
       const hashedPassword = await bcrypt.hash(password, 10);
       const insertSql = `INSERT INTO users (phone, name, username, avatar, bio, country, is_verified, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
       const insertResult = await dbRun(insertSql, [
@@ -166,7 +176,7 @@ app.post(
         is_verified,
         hashedPassword,
       ]);
-      res.status(201).json({
+      const user = {
         id: insertResult.lastID,
         phone,
         name,
@@ -175,13 +185,57 @@ app.post(
         bio,
         country,
         is_verified,
-      });
+      };
+      res.status(201).json(userToResponse(user));
     } catch (err) {
       console.error(err);
       return sendError(res, 500, "Database error.");
     }
   }
 );
+
+// Login endpoint
+app.post(
+  "/api/login",
+  [
+    body("phone").trim().notEmpty().withMessage("Phone is required"),
+    body("password").notEmpty().withMessage("Password is required"),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return sendError(res, 400, errors.array()[0].msg);
+      }
+      const phone = xss(req.body.phone);
+      const password = xss(req.body.password);
+      const user = await dbGet("SELECT * FROM users WHERE phone = ?", [phone]);
+      if (!user) return sendError(res, 404, "User not found");
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) return sendError(res, 401, "Invalid password");
+      res.json(userToResponse(user));
+    } catch (err) {
+      console.error(err);
+      return sendError(res, 500, "Database error");
+    }
+  }
+);
+
+// Get user by username (future route)
+app.get("/api/user/:username", async (req, res) => {
+  try {
+    const username = xss(req.params.username);
+    const user = await dbGet(
+      `SELECT ${USER_FIELDS.join(", ")} FROM users WHERE username = ?`,
+      [username]
+    );
+    if (!user) return sendError(res, 404, "User not found");
+    res.json(userToResponse(user));
+  } catch (err) {
+    console.error(err);
+    return sendError(res, 500, "Database error");
+  }
+});
 
 // Get all call logs
 app.get("/api/call-logs", (req, res) => {

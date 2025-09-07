@@ -17,13 +17,13 @@ import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
 import { Input } from "../ui/Input";
 
-interface SettingsScreenProps {
+interface SettingsPageProps {
   user: UserType;
   onUpdateProfile: (updates: Partial<UserType>) => Promise<void>;
   onLogout: () => void;
 }
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({
+export const SettingsPage: React.FC<SettingsPageProps> = ({
   user,
   onUpdateProfile,
   onLogout,

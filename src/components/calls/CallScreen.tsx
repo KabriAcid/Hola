@@ -186,7 +186,7 @@ export const CallScreen: React.FC<CallScreenProps> = ({
             </>
           )}
 
-          {/* Answer/End Call Buttons for incoming, only if not answered */}
+          {/* Answer/Decline for incoming, End Call for ongoing */}
           {showAnswer && !answered ? (
             <div className="flex space-x-6">
               <motion.button
@@ -224,10 +224,8 @@ export const CallScreen: React.FC<CallScreenProps> = ({
                 </motion.button>
               )}
             </div>
-          ) : null}
-
-          {/* End call button for outgoing or after answered */}
-          {!showAnswer && !callState.isIncoming && (
+          ) : (
+            // Show end call button for outgoing or after answered (ongoing call)
             <motion.button
               onClick={() => {
                 setPressedBtn("decline");
