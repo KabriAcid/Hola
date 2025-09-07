@@ -34,7 +34,20 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
         return res.json();
       })
       .then((data) => {
-        setCallLogs(data);
+        // Map backend snake_case to frontend camelCase
+        const mapped = data.map((item: any) => ({
+          id: String(item.id),
+          contactId: item.contact_id
+            ? String(item.contact_id)
+            : String(item.id),
+          contactName: item.contact_name,
+          contactPhone: item.contact_phone,
+          contactAvatar: item.contact_avatar,
+          type: item.type,
+          duration: item.duration,
+          timestamp: item.timestamp,
+        }));
+        setCallLogs(mapped);
         setLoading(false);
       })
       .catch((err) => {
@@ -128,7 +141,7 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <span>{formatTime(call.timestamp)}</span>
-                  {call.duration && (
+                  {call.duration && call.duration > 0 && (
                     <>
                       <span className="mx-2">•</span>
                       <span>{formatDuration(call.duration)}</span>
