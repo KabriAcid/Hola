@@ -89,8 +89,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           password: formData.password,
         }),
       });
+      const data = await response.json();
+      console.log("Backend response:", data);
       if (!response.ok) {
-        const data = await response.json();
         setErrors({
           general: data.error || "Registration failed. Please try again.",
         });
@@ -216,7 +217,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
         <Button
           type="submit"
-          className="w-full border border-black text-primary bg-transparent hover:bg-gray-900 hover:text-white"
+          className="w-full border border-black text-gray-900 bg-transparent hover:bg-gray-900 hover:text-white"
           isLoading={isLoading}
         >
           Create Account
