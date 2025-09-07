@@ -25,6 +25,22 @@ import { apiService } from "../services/api";
 import { Contact, CallLog, Conversation, Message } from "../types";
 
 export const MainApp: React.FC = () => {
+  // State for simulating incoming call
+  const [showIncomingCall, setShowIncomingCall] = useState(false);
+
+  // Dummy incoming call data
+  const incomingCallData = {
+    contact: {
+      id: "incoming_1",
+      name: "Ada Lovelace",
+      phone: "+2348012345678",
+      avatar: undefined,
+    },
+    isIncoming: true,
+    isMuted: false,
+    isSpeakerOn: false,
+    duration: 0,
+  };
   const { user, updateUser, logout } = useAuth();
   const {
     callState,
@@ -372,11 +388,7 @@ export const MainApp: React.FC = () => {
 
       {/* Floating Incoming Call Button (always visible except in chat) */}
       {!selectedContactId && (
-        <FloatingIncomingCallButton
-          onClick={() => {
-            /* TODO: trigger incoming call UI */
-          }}
-        />
+        <FloatingIncomingCallButton onClick={() => setShowIncomingCall(true)} />
       )}
       {!selectedContactId && <BottomNavigation />}
 
@@ -393,7 +405,20 @@ export const MainApp: React.FC = () => {
       />
 
       {/* Call Screen */}
+      {/* Incoming Call Modal */}
       <AnimatePresence>
+        {showIncomingCall && (
+          <CallScreen
+            callState={incomingCallData as any}
+            onEndCall={() => setShowIncomingCall(false)}
+            onToggleMute={() => {}}
+            onToggleSpeaker={() => {}}
+            onAnswerCall={() => setShowIncomingCall(false)}
+            answerLabel="Answer"
+            declineLabel="Decline"
+            showAnswer={true}
+          />
+        )}
         {callState.isActive && (
           <CallScreen
             callState={callState}

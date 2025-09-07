@@ -9,7 +9,10 @@ interface CallScreenProps {
   onEndCall: () => void;
   onToggleMute: () => void;
   onToggleSpeaker: () => void;
-  onAnswerCall: () => void;
+  onAnswerCall?: () => void;
+  answerLabel?: string;
+  declineLabel?: string;
+  showAnswer?: boolean;
 }
 
 export const CallScreen: React.FC<CallScreenProps> = ({
@@ -18,6 +21,9 @@ export const CallScreen: React.FC<CallScreenProps> = ({
   onToggleMute,
   onToggleSpeaker,
   onAnswerCall,
+  answerLabel = "Answer",
+  declineLabel = "Decline",
+  showAnswer = callState.isIncoming,
 }) => {
   // Ref for audio element
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -34,7 +40,10 @@ export const CallScreen: React.FC<CallScreenProps> = ({
   useEffect(() => {
     // Only play if not in call (duration 0)
     if (callState.duration === 0) {
-      audioRef.current = new window.Audio("/assets/sounds/phone-ringing.mp3");
+      const sound = callState.isIncoming
+        ? "/assets/sounds/ringing-tone.mp3"
+        : "/assets/sounds/phone-ringing.mp3";
+      audioRef.current = new window.Audio(sound);
       audioRef.current.loop = true;
       audioRef.current.play().catch(() => {});
     }
@@ -45,7 +54,7 @@ export const CallScreen: React.FC<CallScreenProps> = ({
         audioRef.current = null;
       }
     };
-  }, [callState.duration]);
+  }, [callState.duration, callState.isIncoming]);
 
   if (!callState.contact) return null;
 
@@ -121,7 +130,7 @@ export const CallScreen: React.FC<CallScreenProps> = ({
           </motion.button>
 
           {/* Answer/End Call Button */}
-          {callState.isIncoming ? (
+          {showAnswer ? (
             <div className="flex space-x-6">
               <motion.button
                 onClick={onEndCall}
@@ -129,15 +138,23 @@ export const CallScreen: React.FC<CallScreenProps> = ({
                 whileTap={{ scale: 0.95 }}
               >
                 <PhoneOff className="w-8 h-8" />
+                <span className="ml-2 font-semibold text-base hidden sm:inline">
+                  {declineLabel}
+                </span>
               </motion.button>
 
-              <motion.button
-                onClick={onAnswerCall}
-                className="p-6 bg-green-600 rounded-full animate-pulse"
-                whileTap={{ scale: 0.95 }}
-              >
-                <Phone className="w-8 h-8" />
-              </motion.button>
+              {onAnswerCall && (
+                <motion.button
+                  onClick={onAnswerCall}
+                  className="p-6 bg-green-600 rounded-full animate-pulse"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Phone className="w-8 h-8" />
+                  <span className="ml-2 font-semibold text-base hidden sm:inline">
+                    {answerLabel}
+                  </span>
+                </motion.button>
+              )}
             </div>
           ) : (
             <motion.button
