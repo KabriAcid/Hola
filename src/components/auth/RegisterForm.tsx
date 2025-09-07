@@ -65,7 +65,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
     try {
       await onRegister(formData.name, formData.phone, formData.password);
-      navigate("/app/calls");
+      // Navigation will be handled in AuthPage after authentication
     } catch (error) {
       setErrors({ general: "Registration failed. Please try again." });
     }
