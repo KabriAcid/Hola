@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Phone, Lock, Eye, EyeOff } from "lucide-react";
+import  truecallerLogo  from "../../../public/assets/imgs/truecaller-android.png";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { LoginMethod } from "../../types";
@@ -162,7 +163,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <div className="space-y-4">
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Phone className="w-8 h-8 text-blue-600" />
+              <img
+                src={truecallerLogo}
+                alt="Truecaller"
+                className="w-10 h-10 object-contain"
+              />
             </div>
             <h3 className="text-lg font-semibold mb-2">
               Sign in with Truecaller
@@ -187,7 +192,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             className="w-full"
             isLoading={isLoading}
           >
-            Continue with Truecaller
+            <img
+              src={truecallerLogo}
+              alt="Truecaller"
+              className="w-6 h-6 object-contain mr-2"
+            />
+            <span>Continue with Truecaller</span>
           </Button>
         </div>
       )}
