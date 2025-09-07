@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Phone, Lock, Eye, EyeOff } from "lucide-react";
-import  truecallerLogo  from "../../../public/assets/imgs/truecaller-android.png";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { LoginMethod } from "../../types";
@@ -20,9 +19,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   isLoading,
   onSwitchToRegister,
 }) => {
+  
   const navigate = useNavigate();
-
-  // ...existing code...
 
   const [formData, setFormData] = useState({
     phone: "",
@@ -164,7 +162,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <img
-                src={truecallerLogo}
+                src="/assets/imgs/truecaller-android.png"
                 alt="Truecaller"
                 className="w-10 h-10 object-contain"
               />
@@ -193,7 +191,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             isLoading={isLoading}
           >
             <img
-              src={truecallerLogo}
+              src="/assets/imgs/truecaller-android.png"
               alt="Truecaller"
               className="w-6 h-6 object-contain mr-2"
             />

@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Routes,
-  Route,
-  useNavigate,
-  useLocation,
-  Navigate,
-} from "react-router-dom";
+import { Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { LoginForm } from "../components/auth/LoginForm";
 import { RegisterForm } from "../components/auth/RegisterForm";
@@ -93,51 +87,43 @@ export const AuthPage: React.FC = () => {
     }
   };
 
+  // Determine which form to show based on location.pathname
+  const isRegister = location.pathname.endsWith("register");
+
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <AnimatePresence mode="wait">
-          <Routes location={location}>
-            <Route
-              index
-              element={
-                <motion.div
-                  key="login"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <LoginForm
-                    onLogin={handleLogin}
-                    onTruecallerLogin={handleTruecallerLogin}
-                    onSwitchToRegister={() => navigate("/register")}
-                    isLoading={isLoading}
-                  />
-                </motion.div>
-              }
-            />
-            <Route
-              path="register"
-              element={
-                <motion.div
-                  key="register"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <RegisterForm
-                    onRegister={handleRegister}
-                    onSwitchToLogin={() => navigate("/")}
-                    isLoading={isLoading}
-                  />
-                </motion.div>
-              }
-            />
-            {/* fallback to login for unknown auth routes */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          {isRegister ? (
+            <motion.div
+              key="register"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              <RegisterForm
+                onRegister={handleRegister}
+                onSwitchToLogin={() => navigate("/")}
+                isLoading={isLoading}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="login"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              <LoginForm
+                onLogin={handleLogin}
+                onTruecallerLogin={handleTruecallerLogin}
+                onSwitchToRegister={() => navigate("/register")}
+                isLoading={isLoading}
+              />
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
