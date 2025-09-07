@@ -9,12 +9,14 @@ interface RegisterFormProps {
   onRegister: (name: string, phone: string, password: string) => Promise<void>;
   isLoading: boolean;
   onSwitchToLogin?: () => void;
+  onTruecallerRegister?: () => Promise<void>;
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({
   onRegister,
   isLoading,
   onSwitchToLogin,
+  onTruecallerRegister,
 }) => {
   const navigate = useNavigate();
 
@@ -27,6 +29,19 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isTruecallerLoading, setIsTruecallerLoading] = useState(false);
+  const handleTruecallerRegister = async () => {
+    if (!onTruecallerRegister) return;
+    setIsTruecallerLoading(true);
+    setErrors({});
+    try {
+      await onTruecallerRegister();
+    } catch (error) {
+      setErrors({ general: "Truecaller registration failed" });
+    } finally {
+      setIsTruecallerLoading(false);
+    }
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -188,8 +203,27 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           </motion.p>
         )}
 
-        <Button type="submit" className="w-full" isLoading={isLoading}>
+        <Button
+          type="submit"
+          className="w-full border border-gray-200 bg-transparent text-black hover:bg-gray-50"
+          isLoading={isLoading}
+        >
           Create Account
+        </Button>
+
+        {/* Truecaller Button */}
+        <Button
+          type="button"
+          className="w-full flex items-center justify-center bg-black border border-gray-200 text-black mt-2"
+          onClick={handleTruecallerRegister}
+          isLoading={isTruecallerLoading}
+        >
+          <img
+            src="/assets/imgs/truecaller-android.png"
+            alt="Truecaller"
+            className="w-6 h-6 object-contain mr-2"
+          />
+          <span>Continue with Truecaller</span>
         </Button>
       </form>
 
