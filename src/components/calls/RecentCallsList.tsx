@@ -109,9 +109,17 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                 </div>
               </div>
 
-              <div className="p-2 flex items-center justify-center">
+              <button
+                className="p-2 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCall(call.contactPhone, call.contactName);
+                }}
+                aria-label="Call"
+                type="button"
+              >
                 {getCallIcon(call.type)}
-              </div>
+              </button>
             </motion.div>
           ))
         )}
@@ -142,18 +150,6 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <motion.button
                 onClick={() => {
-                  onCall(selectedCall.contactPhone, selectedCall.contactName);
-                  setSelectedCall(null);
-                }}
-                className="flex items-center justify-center space-x-2 p-4 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
-                whileTap={{ scale: 0.95 }}
-              >
-                <Phone className="w-5 h-5" />
-                <span>Call</span>
-              </motion.button>
-
-              <motion.button
-                onClick={() => {
                   onMessage(selectedCall.contactId);
                   setSelectedCall(null);
                 }}
@@ -163,6 +159,18 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                 <MessageCircle className="w-5 h-5" />
                 <span>Message</span>
               </motion.button>
+              <motion.button
+                onClick={() => {
+                  onCall(selectedCall.contactPhone, selectedCall.contactName);
+                  setSelectedCall(null);
+                }}
+                className="flex items-center justify-center space-x-2 p-4 bg-primary text-white rounded-lg hover:bg-gray-900 transition-colors"
+                whileTap={{ scale: 0.95 }}
+              >
+                <Phone className="w-5 h-5" />
+                <span>Call</span>
+              </motion.button>
+
             </div>
           </div>
         )}

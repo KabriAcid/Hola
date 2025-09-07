@@ -232,13 +232,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <Button
               variant="secondary"
               onClick={() => setShowProfileModal(false)}
-              className="flex-1"
             >
               Cancel
             </Button>
             <Button
               onClick={handleUpdateProfile}
-              className="flex-1"
               isLoading={isLoading}
             >
               Save Changes
