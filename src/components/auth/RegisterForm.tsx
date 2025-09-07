@@ -111,6 +111,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       className="w-full max-w-md mx-auto p-6"
     >
       <div className="text-center mb-8">
+        <div className="flex items-center justify-center mb-4">
+          <img
+            src="/favicon.png"
+            className="w-20 h-20 object-cover"
+            alt="Favicon"
+          />
+        </div>
         <h1 className="text-3xl font-bold text-black mb-2">Join Hola</h1>
         <p className="text-gray-600">Create your account to get started</p>
       </div>
@@ -205,16 +212,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
         <Button
           type="submit"
-          className="w-full border border-gray-200 bg-transparent text-black hover:bg-gray-50"
+          className="w-full border border-black text-black bg-transparent hover:bg-gray-50"
           isLoading={isLoading}
         >
           Create Account
         </Button>
-
-        {/* Truecaller Button */}
         <Button
           type="button"
-          className="w-full flex items-center justify-center bg-black border border-gray-200 text-black mt-2"
+          className="w-full flex items-center justify-center bg-white border border-gray-200 text-black mt-2"
           onClick={handleTruecallerRegister}
           isLoading={isTruecallerLoading}
         >
