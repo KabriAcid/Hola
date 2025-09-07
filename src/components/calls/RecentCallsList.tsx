@@ -96,10 +96,7 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
 
               <div className="ml-3 flex-1">
                 <div className="flex items-center">
-                  {getCallIcon(call.type)}
-                  <h3 className="font-medium text-black ml-2">
-                    {call.contactName}
-                  </h3>
+                  <h3 className="font-medium text-black">{call.contactName}</h3>
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <span>{formatTime(call.timestamp)}</span>
@@ -112,16 +109,9 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                 </div>
               </div>
 
-              <motion.button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCall(call.contactPhone, call.contactName);
-                }}
-                className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-                whileTap={{ scale: 0.95 }}
-              >
-                <Phone className="w-5 h-5 text-green-600" />
-              </motion.button>
+              <div className="p-2 flex items-center justify-center">
+                {getCallIcon(call.type)}
+              </div>
             </motion.div>
           ))
         )}
