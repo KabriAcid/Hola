@@ -10,6 +10,8 @@ import { useAuth } from "./hooks/useAuth";
 import { AuthPage } from "./pages/AuthPage";
 import { MainApp } from "./pages/MainApp";
 import { LoadingSpinner } from "./components/ui/LoadingSpinner";
+import NotFound from "./pages/404";
+
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -28,6 +30,7 @@ function App() {
         <AnimatePresence mode="wait">
           <Routes>
             {/* Public routes for authentication */}
+            <Route path="*" element={<NotFound />} />
             <Route
               path="/"
               element={

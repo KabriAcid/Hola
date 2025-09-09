@@ -159,8 +159,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         </form>
       ) : (
         <div className="space-y-4">
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="text-center py-5">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <img
                 src="/assets/imgs/truecaller-android.png"
                 alt="Truecaller"
