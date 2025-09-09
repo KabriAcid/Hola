@@ -247,7 +247,13 @@ app.get("/api/call-logs", (req, res) => {
         console.error(err);
         return sendError(res, 500, "Database error.");
       }
-      res.json(rows);
+      res.json(
+        Array.isArray(rows)
+          ? rows.map((row) => ({
+              ...row,
+            }))
+          : []
+      );
     }
   );
 });

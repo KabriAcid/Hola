@@ -1,24 +1,28 @@
-import { Contact, CallLog, Message, Conversation, User } from '../types';
-import { mockContacts, mockCallLogs, mockMessages, mockConversations } from './mockData';
+import { Contact, CallLog, Message, Conversation, User } from "../types";
+import {
+  mockContacts,
+  mockCallLogs,
+  mockMessages,
+  mockConversations,
+} from "./mockData";
 
 // Simulated API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Mock API service - replace with real API calls later
 export const apiService = {
   // Auth
   async login(phone: string, password: string): Promise<User> {
-    await delay(1000);
-    // Simulate login validation
-    if (phone === '1234567890' && password === '1234567890') {
-      return {
-        id: 'user1',
-        name: 'John Doe',
-        phone: '+1234567890',
-        avatar: 'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-      };
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, password }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Login failed");
     }
-    throw new Error('Invalid credentials');
+    return await res.json();
   },
 
   async register(name: string, phone: string, password: string): Promise<User> {
@@ -39,10 +43,11 @@ export const apiService = {
   async truecallerLogin(): Promise<User> {
     await delay(2000);
     return {
-      id: 'truecaller_user',
-      name: 'Truecaller User',
-      phone: '+1987654321',
-      avatar: 'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+      id: "truecaller_user",
+      name: "Truecaller User",
+      phone: "+1987654321",
+      avatar:
+        "https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop",
     };
   },
 
@@ -52,7 +57,7 @@ export const apiService = {
     return [...mockContacts];
   },
 
-  async addContact(contact: Omit<Contact, 'id'>): Promise<Contact> {
+  async addContact(contact: Omit<Contact, "id">): Promise<Contact> {
     await delay(500);
     return {
       ...contact,
@@ -62,8 +67,8 @@ export const apiService = {
 
   async updateContact(id: string, updates: Partial<Contact>): Promise<Contact> {
     await delay(500);
-    const contact = mockContacts.find(c => c.id === id);
-    if (!contact) throw new Error('Contact not found');
+    const contact = mockContacts.find((c) => c.id === id);
+    if (!contact) throw new Error("Contact not found");
     return { ...contact, ...updates };
   },
 
@@ -78,7 +83,7 @@ export const apiService = {
     return [...mockCallLogs];
   },
 
-  async addCallLog(callLog: Omit<CallLog, 'id'>): Promise<CallLog> {
+  async addCallLog(callLog: Omit<CallLog, "id">): Promise<CallLog> {
     await delay(300);
     return {
       ...callLog,
@@ -94,7 +99,7 @@ export const apiService = {
 
   async getMessages(contactId: string): Promise<Message[]> {
     await delay(500);
-    return mockMessages.filter(m => m.contactId === contactId);
+    return mockMessages.filter((m) => m.contactId === contactId);
   },
 
   async sendMessage(contactId: string, content: string): Promise<Message> {
@@ -114,9 +119,9 @@ export const apiService = {
     await delay(500);
     // Return updated user - in real app, this would update backend
     return {
-      id: 'user1',
-      name: 'John Doe',
-      phone: '+1234567890',
+      id: "user1",
+      name: "John Doe",
+      phone: "+1234567890",
       ...updates,
     };
   },
