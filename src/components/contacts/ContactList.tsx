@@ -1,11 +1,10 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Phone, MessageCircle, Star, Edit, Trash2 } from 'lucide-react';
-import { Contact } from '../../types';
-import { Avatar } from '../ui/Avatar';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Phone, MessageCircle, Star, Edit, Trash2 } from "lucide-react";
+import { Contact } from "../../types";
+import { Avatar } from "../ui/Avatar";
 
 interface ContactListProps {
-  contacts: Contact[];
   onCall: (contact: Contact) => void;
   onMessage: (contact: Contact) => void;
   onEdit: (contact: Contact) => void;
@@ -14,17 +13,62 @@ interface ContactListProps {
 }
 
 export const ContactList: React.FC<ContactListProps> = ({
-  contacts,
   onCall,
   onMessage,
   onEdit,
   onDelete,
   onToggleFavorite,
 }) => {
-  const favorites = contacts.filter(c => c.isFavorite);
-  const regular = contacts.filter(c => !c.isFavorite);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const ContactItem: React.FC<{ contact: Contact; index: number }> = ({ contact, index }) => (
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetch("/api/contacts", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch contacts");
+        return res.json();
+      })
+      .then((data) => {
+        setContacts(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message || "Error loading contacts");
+        setLoading(false);
+      });
+  }, []);
+
+  // Handlers to update state after edit/delete/favorite
+  const handleDelete = (contactId: string) => {
+    setContacts((prev) => prev.filter((c) => c.id !== contactId));
+    onDelete(contactId);
+  };
+  const handleToggleFavorite = (contactId: string) => {
+    setContacts((prev) =>
+      prev.map((c) =>
+        c.id === contactId ? { ...c, isFavorite: !c.isFavorite } : c
+      )
+    );
+    onToggleFavorite(contactId);
+  };
+  const handleEdit = (contact: Contact) => {
+    onEdit(contact);
+  };
+
+  const favorites = contacts.filter((c) => c.isFavorite);
+  const regular = contacts.filter((c) => !c.isFavorite);
+
+  const ContactItem: React.FC<{ contact: Contact; index: number }> = ({
+    contact,
+    index,
+  }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -48,7 +92,7 @@ export const ContactList: React.FC<ContactListProps> = ({
           <p className="text-sm text-gray-600">{contact.phone}</p>
         </div>
       </div>
-      
+
       <div className="flex items-center space-x-2">
         <motion.button
           onClick={() => onMessage(contact)}
@@ -57,7 +101,7 @@ export const ContactList: React.FC<ContactListProps> = ({
         >
           <MessageCircle className="w-5 h-5 text-gray-600" />
         </motion.button>
-        
+
         <motion.button
           onClick={() => onCall(contact)}
           className="p-2 hover:bg-gray-200 rounded-full transition-colors"
@@ -65,7 +109,7 @@ export const ContactList: React.FC<ContactListProps> = ({
         >
           <Phone className="w-5 h-5 text-green-600" />
         </motion.button>
-        
+
         <div className="relative group">
           <motion.button
             className="p-2 hover:bg-gray-200 rounded-full transition-colors"
@@ -73,7 +117,7 @@ export const ContactList: React.FC<ContactListProps> = ({
           >
             <Edit className="w-4 h-4 text-gray-600" />
           </motion.button>
-          
+
           <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
             <button
               onClick={() => onEdit(contact)}
@@ -85,7 +129,9 @@ export const ContactList: React.FC<ContactListProps> = ({
               onClick={() => onToggleFavorite(contact.id)}
               className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
             >
-              {contact.isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+              {contact.isFavorite
+                ? "Remove from Favorites"
+                : "Add to Favorites"}
             </button>
             <button
               onClick={() => onDelete(contact.id)}
@@ -101,38 +147,56 @@ export const ContactList: React.FC<ContactListProps> = ({
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {favorites.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-black px-4 py-2 bg-gray-50">
-            Favorites
-          </h2>
-          {favorites.map((contact, index) => (
-            <ContactItem key={contact.id} contact={contact} index={index} />
-          ))}
-        </div>
-      )}
-      
-      {regular.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold text-black px-4 py-2 bg-gray-50">
-            All Contacts
-          </h2>
-          {regular.map((contact, index) => (
-            <ContactItem key={contact.id} contact={contact} index={favorites.length + index} />
-          ))}
-        </div>
-      )}
-      
-      {contacts.length === 0 && (
+      {loading ? (
         <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Phone className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts yet</h3>
-            <p className="text-gray-600">Add your first contact to get started</p>
-          </div>
+          <div className="text-center text-gray-500">Loading contacts...</div>
         </div>
+      ) : error ? (
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center text-red-500">{error}</div>
+        </div>
+      ) : (
+        <>
+          {favorites.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-black px-4 py-2 bg-gray-50">
+                Favorites
+              </h2>
+              {favorites.map((contact, index) => (
+                <ContactItem key={contact.id} contact={contact} index={index} />
+              ))}
+            </div>
+          )}
+          {regular.length > 0 && (
+            <div>
+              <h2 className="text-lg font-semibold text-black px-4 py-2 bg-gray-50">
+                All Contacts
+              </h2>
+              {regular.map((contact, index) => (
+                <ContactItem
+                  key={contact.id}
+                  contact={contact}
+                  index={favorites.length + index}
+                />
+              ))}
+            </div>
+          )}
+          {contacts.length === 0 && (
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Phone className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No contacts yet
+                </h3>
+                <p className="text-gray-600">
+                  Add your first contact to get started
+                </p>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -13,6 +13,7 @@ interface CallScreenProps {
   answerLabel?: string;
   declineLabel?: string;
   showAnswer?: boolean;
+  isAnswered?: boolean; // <-- new prop
 }
 
 export const CallScreen: React.FC<CallScreenProps> = ({
@@ -24,9 +25,9 @@ export const CallScreen: React.FC<CallScreenProps> = ({
   answerLabel = "Answer",
   declineLabel = "Decline",
   showAnswer = callState.isIncoming,
+  isAnswered = false,
 }) => {
-  // State for simulating answered call and duration
-  const [answered, setAnswered] = useState(false);
+  // State for call duration (only after answered)
   const [duration, setDuration] = useState(0);
   const [pressedBtn, setPressedBtn] = useState<string | null>(null);
   // Ref for audio element
@@ -40,10 +41,9 @@ export const CallScreen: React.FC<CallScreenProps> = ({
       .padStart(2, "0")}`;
   };
 
-  // Play ringing/beep sound on mount if not in call
+  // Play ringing/beep sound on mount if not answered
   useEffect(() => {
-    // Only play if not in call (duration 0) and not answered
-    if (callState.duration === 0 && !answered) {
+    if (!isAnswered) {
       const sound = callState.isIncoming
         ? "/assets/sounds/ringing-tone.mp3"
         : "/assets/sounds/phone-ringing.mp3";
@@ -58,12 +58,12 @@ export const CallScreen: React.FC<CallScreenProps> = ({
         audioRef.current = null;
       }
     };
-  }, [callState.duration, callState.isIncoming, answered]);
+  }, [callState.isIncoming, isAnswered]);
 
   // Simulate call duration after answering
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null;
-    if (answered) {
+    if (isAnswered) {
       timer = setInterval(() => {
         setDuration((d) => d + 1);
       }, 1000);
@@ -73,7 +73,10 @@ export const CallScreen: React.FC<CallScreenProps> = ({
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [answered]);
+  }, [isAnswered]);
+
+  // Always show 0:00 if not answered, otherwise show the local duration
+  const displayDuration = isAnswered ? duration : 0;
 
   if (!callState.contact) return null;
 
@@ -109,7 +112,7 @@ export const CallScreen: React.FC<CallScreenProps> = ({
           </h1>
           <p className="text-gray-300 mb-2">{callState.contact.phone}</p>
 
-          {callState.isIncoming && !answered ? (
+          {callState.isIncoming && !isAnswered ? (
             <motion.p
               animate={{ opacity: [1, 0.5, 1] }}
               transition={{ duration: 1.5, repeat: Infinity }}
@@ -119,9 +122,7 @@ export const CallScreen: React.FC<CallScreenProps> = ({
             </motion.p>
           ) : (
             <p className="text-lg text-gray-400">
-              {answered || callState.duration > 0
-                ? formatDuration(answered ? duration : callState.duration)
-                : "Connecting..."}
+              {isAnswered ? formatDuration(displayDuration) : "Connecting..."}
             </p>
           )}
         </motion.div>
@@ -134,7 +135,7 @@ export const CallScreen: React.FC<CallScreenProps> = ({
           className="flex items-center justify-center space-x-6"
         >
           {/* Only show mute/speaker after answered, or always for outgoing */}
-          {(answered || !callState.isIncoming) && (
+          {(isAnswered || !callState.isIncoming) && (
             <>
               <motion.button
                 onClick={() => {
@@ -187,7 +188,7 @@ export const CallScreen: React.FC<CallScreenProps> = ({
           )}
 
           {/* Answer/Decline for incoming, End Call for ongoing */}
-          {showAnswer && !answered ? (
+          {showAnswer && !isAnswered ? (
             <div className="flex space-x-6">
               <motion.button
                 onClick={() => {
@@ -210,8 +211,7 @@ export const CallScreen: React.FC<CallScreenProps> = ({
                   onClick={() => {
                     setPressedBtn("answer");
                     setTimeout(() => setPressedBtn(null), 200);
-                    setAnswered(true);
-                    onAnswerCall();
+                    onAnswerCall && onAnswerCall();
                   }}
                   className={`p-6 rounded-full animate-pulse ${
                     pressedBtn === "answer" ? "bg-green-800" : "bg-green-600"

@@ -42,21 +42,39 @@ io.on("connection", (socket) => {
     const { to } = payload;
     const targetSocketId = userSockets[to];
     if (targetSocketId) {
-      io.to(targetSocketId).emit("call-invite", payload);
+      io.to(targetSocketId).emit("call-incoming", payload);
       console.log(`Forwarded call-invite to ${to}`);
     }
   });
 
-  // Call accept/decline/end: forward to other party
-  ["call-accept", "call-decline", "call-end"].forEach((event) => {
-    socket.on(event, (payload) => {
-      const { to } = payload;
-      const targetSocketId = userSockets[to];
-      if (targetSocketId) {
-        io.to(targetSocketId).emit(event, payload);
-        console.log(`Forwarded ${event} to ${to}`);
-      }
-    });
+  // Call accept: { from, to, channel }
+  socket.on("call-accept", (payload) => {
+    const { to } = payload;
+    const targetSocketId = userSockets[to];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("call-accepted", payload);
+      console.log(`Forwarded call-accept to ${to}`);
+    }
+  });
+
+  // Call decline: { from, to, channel }
+  socket.on("call-decline", (payload) => {
+    const { to } = payload;
+    const targetSocketId = userSockets[to];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("call-declined", payload);
+      console.log(`Forwarded call-decline to ${to}`);
+    }
+  });
+
+  // Call end: { from, to, channel }
+  socket.on("call-end", (payload) => {
+    const { to } = payload;
+    const targetSocketId = userSockets[to];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("call-ended", payload);
+      console.log(`Forwarded call-end to ${to}`);
+    }
   });
 
   socket.on("disconnect", () => {
@@ -169,7 +187,11 @@ app.post(
     const bio = "Not available";
     const country = "Nigeria";
     const is_verified = 0;
-    if (await dbGet("SELECT id FROM users WHERE phone = ? AND is_verified = 1", [phone])) {
+    if (
+      await dbGet("SELECT id FROM users WHERE phone = ? AND is_verified = 1", [
+        phone,
+      ])
+    ) {
       return sendError(res, 409, "Phone already exists.");
     }
     if (
@@ -309,6 +331,26 @@ app.get("/api/user/:username", async (req, res) => {
     res.json(userToResponse(user));
   } catch (err) {
     w;
+    console.error(err);
+    return sendError(res, 500, "Database error");
+  }
+});
+
+// Get contacts for the current user (JWT protected)
+app.get("/api/contacts", authenticateJWT, async (req, res) => {
+  try {
+    const rows = await new Promise((resolve, reject) => {
+      db.all(
+        `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, label, initials, notes, birthday FROM contacts WHERE user_id = ? ORDER BY name COLLATE NOCASE`,
+        [req.user.id],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        }
+      );
+    });
+    res.json(rows);
+  } catch (err) {
     console.error(err);
     return sendError(res, 500, "Database error");
   }

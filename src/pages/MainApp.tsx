@@ -21,27 +21,15 @@ import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
 import { useCall } from "../hooks/useCall";
 import { getSocket } from "../socket";
-import { useLocalStorage } from "../hooks/useLocalStorage";
 import { apiService } from "../services/api";
 import { Contact, CallLog, Conversation, Message } from "../types";
 
 export const MainApp: React.FC = () => {
-  // State for simulating incoming call
-  const [showIncomingCall, setShowIncomingCall] = useState(false);
+  // Track if call is answered (for CallScreen)
+  const [isCallAnswered, setIsCallAnswered] = useState(false);
+  // Store channel for Agora (if needed)
+  const [callChannel, setCallChannel] = useState<string | null>(null);
 
-  // Dummy incoming call data
-  const incomingCallData = {
-    contact: {
-      id: "incoming_1",
-      name: "Ada Lovelace",
-      phone: "+2348012345678",
-      avatar: undefined,
-    },
-    isIncoming: true,
-    isMuted: false,
-    isSpeakerOn: false,
-    duration: 0,
-  };
   const { user, updateUser, logout } = useAuth();
   const {
     callState,
@@ -51,6 +39,11 @@ export const MainApp: React.FC = () => {
     toggleSpeaker,
     answerCall,
   } = useCall();
+
+  // Contacts state is now fetched from backend
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(true);
+  const [contactsError, setContactsError] = useState<string | null>(null);
 
   // Socket.io setup
   const socketRef = useRef<any>(null);
@@ -63,57 +56,58 @@ export const MainApp: React.FC = () => {
     // Register user by phone number
     socket.emit("register", user.phone);
 
-    // Incoming call invite
-    socket.on("call-invite", (payload) => {
+    // Incoming call
+    socket.on("call-incoming", (payload) => {
       // payload: { from, to, channel, ... }
-      // Find contact by phone
       const contact = contacts.find((c) => c.phone === payload.from) || {
         id: "temp",
         name: payload.from,
         phone: payload.from,
       };
+      setCallChannel(payload.channel || null);
+      setIsCallAnswered(false);
       startCall(contact, true);
     });
 
-    // Call accept/decline/end events
-    socket.on("call-accept", (payload) => {
-      // Optionally show UI feedback
+    // Call accepted (other party answered)
+    socket.on("call-accepted", (payload) => {
+      setIsCallAnswered(true);
+      setCallChannel(payload.channel || null);
     });
-    socket.on("call-decline", (payload) => {
+
+    // Call declined
+    socket.on("call-declined", (payload) => {
+      setIsCallAnswered(false);
+      setCallChannel(null);
       endCall();
     });
-    socket.on("call-end", (payload) => {
+
+    // Call ended
+    socket.on("call-ended", (payload) => {
+      setIsCallAnswered(false);
+      setCallChannel(null);
       endCall();
     });
 
     return () => {
-      socket.off("call-invite");
-      socket.off("call-accept");
-      socket.off("call-decline");
-      socket.off("call-end");
+      socket.off("call-incoming");
+      socket.off("call-accepted");
+      socket.off("call-declined");
+      socket.off("call-ended");
     };
     // eslint-disable-next-line
-  }, [user]);
+  }, [user, contacts, startCall, endCall]);
 
   const navigate = useNavigate();
   const location = useLocation();
-  const [contacts, setContacts] = useLocalStorage<Contact[]>(
-    "hola_contacts",
-    []
-  );
+
   // const [callLogs, setCallLogs] = useLocalStorage<CallLog[]>(
   //   "hola_call_logs",
   //   []
   // );
   const callLogs: CallLog[] = [];
-  const [conversations, setConversations] = useLocalStorage<Conversation[]>(
-    "hola_conversations",
-    []
-  );
-  const [messages, setMessages] = useLocalStorage<Message[]>(
-    "hola_messages",
-    []
-  );
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const [showContactForm, setShowContactForm] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | undefined>();
@@ -123,26 +117,27 @@ export const MainApp: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Load initial data
+  // Load contacts from backend
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [contactsData, callLogsData, conversationsData] =
-          await Promise.all([
-            apiService.getContacts(),
-            apiService.getCallLogs(),
-            apiService.getConversations(),
-          ]);
-
-        if (contacts.length === 0) setContacts(contactsData);
-        // if (callLogs.length === 0) setCallLogs(callLogsData);
-        if (conversations.length === 0) setConversations(conversationsData);
-      } catch (error) {
-        console.error("Failed to load data:", error);
-      }
-    };
-
-    loadData();
+    setContactsLoading(true);
+    setContactsError(null);
+    fetch("/api/contacts", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch contacts");
+        return res.json();
+      })
+      .then((data) => {
+        setContacts(data);
+        setContactsLoading(false);
+      })
+      .catch((err) => {
+        setContactsError(err.message || "Error loading contacts");
+        setContactsLoading(false);
+      });
   }, []);
 
   const handleCall = (phone: string, name: string) => {
@@ -151,10 +146,13 @@ export const MainApp: React.FC = () => {
       name,
       phone,
     };
+    // Generate channel for Agora (or signaling)
+    const channel = `call_${user.phone}_${phone}_${Date.now()}`;
+    setCallChannel(channel);
+    setIsCallAnswered(false);
     startCall(contact);
     // Send call-invite via socket
     if (user && socketRef.current) {
-      const channel = `call_${user.phone}_${phone}_${Date.now()}`;
       socketRef.current.emit("call-invite", {
         from: user.phone,
         to: phone,
@@ -164,13 +162,42 @@ export const MainApp: React.FC = () => {
   };
 
   const handleEndCall = () => {
-    // Send call-end via socket
+    // Send call-ended via socket
     if (user && callState.contact && socketRef.current) {
       socketRef.current.emit("call-end", {
         from: user.phone,
         to: callState.contact.phone,
+        channel: callChannel,
       });
     }
+    setIsCallAnswered(false);
+    setCallChannel(null);
+    endCall();
+  };
+
+  // Accept incoming call
+  const handleAnswerCall = () => {
+    if (user && callState.contact && socketRef.current) {
+      socketRef.current.emit("call-accept", {
+        from: user.phone,
+        to: callState.contact.phone,
+        channel: callChannel,
+      });
+    }
+    setIsCallAnswered(true);
+  };
+
+  // Decline incoming call
+  const handleDeclineCall = () => {
+    if (user && callState.contact && socketRef.current) {
+      socketRef.current.emit("call-decline", {
+        from: user.phone,
+        to: callState.contact.phone,
+        channel: callChannel,
+      });
+    }
+    setIsCallAnswered(false);
+    setCallChannel(null);
     endCall();
   };
 
@@ -279,8 +306,8 @@ export const MainApp: React.FC = () => {
 
   const filteredContacts = contacts.filter(
     (contact) =>
-      contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.phone.includes(searchQuery)
+      contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contact.phone?.includes(searchQuery)
   );
 
   const selectedContact = selectedContactId
@@ -380,21 +407,35 @@ export const MainApp: React.FC = () => {
                     exit={{ opacity: 0, y: -20 }}
                     className="h-full"
                   >
-                    <ContactList
-                      contacts={filteredContacts}
-                      onCall={(contact) =>
-                        handleCall(contact.phone, contact.name)
-                      }
-                      onMessage={(contact) =>
-                        handleSelectConversation(contact.id)
-                      }
-                      onEdit={(contact) => {
-                        setEditingContact(contact);
-                        setShowContactForm(true);
-                      }}
-                      onDelete={handleDeleteContact}
-                      onToggleFavorite={handleToggleFavorite}
-                    />
+                    {contactsLoading ? (
+                      <div className="flex-1 flex items-center justify-center p-8">
+                        <div className="text-center text-gray-500">
+                          Loading contacts...
+                        </div>
+                      </div>
+                    ) : contactsError ? (
+                      <div className="flex-1 flex items-center justify-center p-8">
+                        <div className="text-center text-red-500">
+                          {contactsError}
+                        </div>
+                      </div>
+                    ) : (
+                      <ContactList
+                        onCall={(contact) =>
+                          handleCall(contact.phone, contact.name)
+                        }
+                        onMessage={(contact) =>
+                          handleSelectConversation(contact.id)
+                        }
+                        onEdit={(contact) => {
+                          setEditingContact(contact);
+                          setShowContactForm(true);
+                        }}
+                        onDelete={handleDeleteContact}
+                        onToggleFavorite={handleToggleFavorite}
+                        items={filteredContacts}
+                      />
+                    )}
                   </motion.div>
                 }
               />
@@ -442,10 +483,7 @@ export const MainApp: React.FC = () => {
         </AnimatePresence>
       </div>
 
-      {/* Floating Incoming Call Button (always visible except in chat) */}
-      {!selectedContactId && (
-        <FloatingIncomingCallButton onClick={() => setShowIncomingCall(true)} />
-      )}
+      {/* Floating Incoming Call Button and BottomNavigation (if needed) */}
       {!selectedContactId && <BottomNavigation />}
 
       {/* Contact Form Modal */}
@@ -460,28 +498,19 @@ export const MainApp: React.FC = () => {
         isLoading={isLoading}
       />
 
-      {/* Call Screen */}
-      {/* Incoming Call Modal */}
+      {/* Call Screen (real call only) */}
       <AnimatePresence>
-        {showIncomingCall && (
-          <CallScreen
-            callState={incomingCallData as any}
-            onEndCall={() => setShowIncomingCall(false)}
-            onToggleMute={() => {}}
-            onToggleSpeaker={() => {}}
-            onAnswerCall={() => {}}
-            answerLabel="Answer"
-            declineLabel="Decline"
-            showAnswer={true}
-          />
-        )}
         {callState.isActive && (
           <CallScreen
             callState={callState}
             onEndCall={handleEndCall}
             onToggleMute={toggleMute}
             onToggleSpeaker={toggleSpeaker}
-            onAnswerCall={answerCall}
+            onAnswerCall={handleAnswerCall}
+            declineLabel="Decline"
+            answerLabel="Answer"
+            showAnswer={callState.isIncoming && !isCallAnswered}
+            isAnswered={isCallAnswered}
           />
         )}
       </AnimatePresence>
