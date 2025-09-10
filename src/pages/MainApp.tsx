@@ -42,9 +42,9 @@ export const MainApp: React.FC = () => {
     answerCall,
   } = useCall();
 
-  const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID as string;
-  const AGORA_APP_CERTIFICATE = import.meta.env
-    .VITE_AGORA_APP_CERTIFICATE as string;
+const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID as string | "f979b1e7b1bb42a3b8fbb13414c4ebac";
+const AGORA_APP_CERTIFICATE = import.meta.env
+  .VITE_AGORA_APP_CERTIFICATE as string;
 
   // Debug log for Agora App ID and channel
   useEffect(() => {

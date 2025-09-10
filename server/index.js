@@ -6,11 +6,13 @@ const xss = require("xss");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
+const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
 const app = express();
 const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const cors = require("cors");
+const dotenv = require("dotenv").config();
 const PORT = process.env.PORT || 5000;
 
 // Allow CORS for frontend (adjust origin as needed)
@@ -320,10 +322,9 @@ app.get("/api/me", authenticateJWT, async (req, res) => {
 });
 
 // --- AGORA TOKEN GENERATION ENDPOINT ---
-const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
 app.get("/api/agora-token", (req, res) => {
-  const appID = process.env.VITE_AGORA_APP_ID;
-  const appCertificate = process.env.VITE_AGORA_APP_CERTIFICATE;
+  const appID = process.env.AGORA_APP_ID;
+  const appCertificate = process.env.AGORA_APP_CERTIFICATE;
   const channelName = req.query.channel;
   const uid = req.query.uid || 0;
   const role = RtcRole.PUBLISHER;
