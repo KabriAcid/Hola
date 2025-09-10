@@ -1,10 +1,3 @@
-// Utility to wrap async route handlers and catch errors
-function asyncHandler(fn) {
-  return function (req, res, next) {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-}
-
 // (Route will be re-added below)
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
@@ -73,6 +66,13 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+// Utility to wrap async route handlers and catch errors
+function asyncHandler(fn) {
+  return function (req, res, next) {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+}
 
 // Connect to SQLite database
 const db = new sqlite3.Database("./hola.sqlite", (err) => {
@@ -213,6 +213,28 @@ app.post(
       is_verified,
     };
     res.status(201).json(userToResponse(user));
+  })
+);
+
+// Verification endpoint: verify user by phone and code
+app.post(
+  "/api/verify",
+  asyncHandler(async (req, res) => {
+    const { phone, code } = req.body;
+    if (!phone || !code) return sendError(res, 400, "Missing phone or code");
+    // Find user and code
+    const user = await dbGet(
+      `SELECT u.id FROM users u
+        JOIN verification_codes v ON v.user_id = u.id
+        WHERE u.phone = ? AND v.code = ? AND u.is_verified = 0`,
+      [phone, code]
+    );
+    if (!user) return sendError(res, 400, "Invalid verification code");
+    // Mark user as verified
+    await dbRun("UPDATE users SET is_verified = 1 WHERE id = ?", [user.id]);
+    // Delete verification code
+    await dbRun("DELETE FROM verification_codes WHERE code = ?", [code]);
+    return res.json({ success: true });
   })
 );
 

@@ -81,26 +81,28 @@ export const AuthPage: React.FC = () => {
     }
   };
 
-  // Only allow '000000' as the valid code
+  // Verify code with backend
   const handleVerification = async (code: string) => {
-    if (!pendingPhone || !registrationCode) return false;
-    if (code === registrationCode) {
-      // Simulate login after verification
-      try {
-        await handleLogin(pendingPhone, "verified");
-        setPendingPhone(null);
-        setRegistrationCode(null);
-        setShowVerification(false);
-        localStorage.removeItem("hola_showVerification");
-        localStorage.removeItem("hola_pendingPhone");
-        localStorage.removeItem("hola_registrationCode");
-      } catch (error) {
-        return false;
-      }
-      navigate("/");
+    if (!pendingPhone) return false;
+    try {
+      const response = await fetch("/api/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: pendingPhone, code }),
+      });
+      if (!response.ok) return false;
+      // On success, clear state and redirect to login
+      setPendingPhone(null);
+      setRegistrationCode(null);
+      setShowVerification(false);
+      localStorage.removeItem("hola_showVerification");
+      localStorage.removeItem("hola_pendingPhone");
+      localStorage.removeItem("hola_registrationCode");
+      navigate("/login");
       return true;
+    } catch (error) {
+      return false;
     }
-    return false;
   };
 
   // ...existing code...
