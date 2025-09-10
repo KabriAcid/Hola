@@ -3,6 +3,8 @@ const sqlite3 = require("sqlite3").verbose();
 const { body, validationResult } = require("express-validator");
 const xss = require("xss");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 const app = express();
 const http = require("http");
 const server = http.createServer(app);
@@ -194,7 +196,7 @@ app.post(
   }
 );
 
-// Login endpoint
+// Login endpoint (returns JWT)
 app.post(
   "/api/login",
   [
@@ -213,13 +215,45 @@ app.post(
       if (!user) return sendError(res, 404, "User not found");
       const match = await bcrypt.compare(password, user.password);
       if (!match) return sendError(res, 401, "Invalid password");
-      res.json(userToResponse(user));
+      // Create JWT
+      const token = jwt.sign({ id: user.id, phone: user.phone }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
+      res.json({ user: userToResponse(user), token });
     } catch (err) {
       console.error(err);
       return sendError(res, 500, "Database error");
     }
   }
 );
+// Middleware to authenticate JWT
+function authenticateJWT(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return sendError(res, 401, "Missing or invalid Authorization header");
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) return sendError(res, 401, "Invalid or expired token");
+    req.user = decoded;
+    next();
+  });
+}
+
+// Get current user (JWT protected)
+app.get("/api/me", authenticateJWT, async (req, res) => {
+  try {
+    const user = await dbGet(
+      `SELECT ${USER_FIELDS.join(", ")} FROM users WHERE id = ?`,
+      [req.user.id]
+    );
+    if (!user) return sendError(res, 404, "User not found");
+    res.json(userToResponse(user));
+  } catch (err) {
+    console.error(err);
+    return sendError(res, 500, "Database error");
+  }
+});
 
 // Get user by username (future route)
 app.get("/api/user/:username", async (req, res) => {

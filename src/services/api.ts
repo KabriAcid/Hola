@@ -12,6 +12,25 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // Mock API service - replace with real API calls later
 export const apiService = {
   // Auth
+  token: null as string | null,
+
+  setToken(token: string | null) {
+    if (token) {
+      localStorage.setItem("jwt", token);
+      this.token = token;
+    } else {
+      localStorage.removeItem("jwt");
+      this.token = null;
+    }
+  },
+
+  getToken() {
+    if (this.token) return this.token;
+    const token = localStorage.getItem("jwt");
+    this.token = token;
+    return token;
+  },
+
   async login(phone: string, password: string): Promise<User> {
     const res = await fetch("/api/login", {
       method: "POST",
@@ -21,6 +40,22 @@ export const apiService = {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || "Login failed");
+    }
+    const data = await res.json();
+    if (data.token) this.setToken(data.token);
+    return data.user;
+  },
+
+  async getCurrentUser(): Promise<User> {
+    const token = this.getToken();
+    if (!token) throw new Error("No token");
+    const res = await fetch("/api/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      if (res.status === 401) this.setToken(null);
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to fetch user");
     }
     return await res.json();
   },
