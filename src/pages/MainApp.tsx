@@ -24,6 +24,7 @@ import { getSocket } from "../socket";
 import { apiService } from "../services/api";
 import { Contact, CallLog, Conversation, Message } from "../types";
 import { useAgoraAudio } from "../hooks/useAgoraAudio";
+import { AGORA_APP_ID, AGORA_APP_CERTIFICATE } from "../config";
 
 export const MainApp: React.FC = () => {
   // Track if call is answered (for CallScreen)
@@ -42,9 +43,8 @@ export const MainApp: React.FC = () => {
     answerCall,
   } = useCall();
 
-const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID as string | "f979b1e7b1bb42a3b8fbb13414c4ebac";
-const AGORA_APP_CERTIFICATE = import.meta.env
-  .VITE_AGORA_APP_CERTIFICATE as string;
+  // Use config.ts for Agora credentials
+  // AGORA_APP_ID and AGORA_APP_CERTIFICATE are now imported from config.ts
 
   // Debug log for Agora App ID and channel
   useEffect(() => {

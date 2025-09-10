@@ -330,6 +330,16 @@ app.get("/api/agora-token", (req, res) => {
   const role = RtcRole.PUBLISHER;
   const expireTime = 3600; // 1 hour
 
+  // Defensive check
+  if (!appID || !appCertificate) {
+    console.error("Missing AGORA_APP_ID or AGORA_APP_CERTIFICATE", {
+      appID,
+      appCertificate,
+    });
+    return res
+      .status(500)
+      .json({ error: "Agora credentials not set in backend environment" });
+  }
   if (!channelName) {
     return res.status(400).json({ error: "channel is required" });
   }
