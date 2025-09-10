@@ -43,8 +43,9 @@ export const MainApp: React.FC = () => {
   } = useCall();
 
   const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID as string;
-  const AGORA_APP_CERTIFICATE = import.meta.env.VITE_AGORA_APP_CERTIFICATE as string;
-  
+  const AGORA_APP_CERTIFICATE = import.meta.env
+    .VITE_AGORA_APP_CERTIFICATE as string;
+
   // Debug log for Agora App ID and channel
   useEffect(() => {
     console.log("[DEBUG] AGORA_APP_ID:", AGORA_APP_ID);
@@ -53,11 +54,37 @@ export const MainApp: React.FC = () => {
     if (user) console.log("[DEBUG] user UID:", user.phone);
   }, [AGORA_APP_ID, AGORA_APP_CERTIFICATE, callChannel, user]);
 
+  // State for Agora token
+  const [agoraToken, setAgoraToken] = useState<string | null>(null);
+
+  // Fetch Agora token when call is answered and channel is set
+  useEffect(() => {
+    if (isCallAnswered && callChannel && user) {
+      fetch(
+        `/api/agora-token?channel=${encodeURIComponent(
+          callChannel
+        )}&uid=${encodeURIComponent(user.phone)}`
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setAgoraToken(data.token);
+          console.log("[DEBUG] Agora token fetched:", data.token);
+        })
+        .catch((err) => {
+          setAgoraToken(null);
+          console.error("[DEBUG] Failed to fetch Agora token", err);
+        });
+    } else {
+      setAgoraToken(null);
+    }
+  }, [isCallAnswered, callChannel, user]);
+
   // Setup Agora audio hook (only when channel is set and call is answered)
   const agora = useAgoraAudio({
     appId: AGORA_APP_ID,
     channel: callChannel || "",
-    // Optionally: token: undefined, uid: user?.phone
+    token: agoraToken,
+    uid: user?.phone,
   });
 
   // Contacts state is now fetched from backend

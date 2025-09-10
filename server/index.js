@@ -319,6 +319,35 @@ app.get("/api/me", authenticateJWT, async (req, res) => {
   }
 });
 
+// --- AGORA TOKEN GENERATION ENDPOINT ---
+const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
+app.get("/api/agora-token", (req, res) => {
+  const appID = process.env.VITE_AGORA_APP_ID;
+  const appCertificate = process.env.VITE_AGORA_APP_CERTIFICATE;
+  const channelName = req.query.channel;
+  const uid = req.query.uid || 0;
+  const role = RtcRole.PUBLISHER;
+  const expireTime = 3600; // 1 hour
+
+  if (!channelName) {
+    return res.status(400).json({ error: "channel is required" });
+  }
+
+  const currentTimestamp = Math.floor(Date.now() / 1000);
+  const privilegeExpireTime = currentTimestamp + expireTime;
+
+  const token = RtcTokenBuilder.buildTokenWithUid(
+    appID,
+    appCertificate,
+    channelName,
+    uid,
+    role,
+    privilegeExpireTime
+  );
+
+  res.json({ token });
+});
+
 // Get user by username (future route)
 app.get("/api/user/:username", async (req, res) => {
   try {
