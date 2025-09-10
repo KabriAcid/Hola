@@ -17,6 +17,7 @@ export const useAuth = () => {
         const user = await apiService.getCurrentUser();
         setAuthState({ isAuthenticated: true, user, isLoading: false });
       } catch (err) {
+        // Always clear JWT and state on error
         apiService.setToken(null);
         setAuthState({ isAuthenticated: false, user: null, isLoading: false });
       }
@@ -29,8 +30,8 @@ export const useAuth = () => {
     try {
       const user = await apiService.login(phone, password);
       setAuthState({ isAuthenticated: true, user, isLoading: false });
-      // Persist token in localStorage (already handled by apiService)
     } catch (err) {
+      // Always clear JWT and state on error
       apiService.setToken(null);
       setAuthState({ isAuthenticated: false, user: null, isLoading: false });
       throw err;
@@ -40,6 +41,8 @@ export const useAuth = () => {
   const logout = () => {
     apiService.setToken(null);
     setAuthState({ isAuthenticated: false, user: null, isLoading: false });
+    // Optionally, force reload to clear any stale state
+    // window.location.href = "/login";
   };
 
   const updateUser = (updatedUser: User) => {

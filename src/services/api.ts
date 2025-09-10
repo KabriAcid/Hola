@@ -48,12 +48,15 @@ export const apiService = {
 
   async getCurrentUser(): Promise<User> {
     const token = this.getToken();
-    if (!token) throw new Error("No token");
+    if (!token) {
+      this.setToken(null);
+      throw new Error("No token");
+    }
     const res = await fetch("/api/me", {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {
-      if (res.status === 401) this.setToken(null);
+      this.setToken(null);
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || "Failed to fetch user");
     }

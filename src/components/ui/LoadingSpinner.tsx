@@ -20,9 +20,9 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     <motion.div
       className={`${sizeClasses[size]} ${className}`}
       animate={{ rotate: 360 }}
-      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
     >
-      <div className="w-full h-full border-2 border-gray-300 border-t-black rounded-full"></div>
+      <div className="w-8 h-8 border-4 border-gray-300 border-t-black rounded-full"></div>
     </motion.div>
   );
 };
