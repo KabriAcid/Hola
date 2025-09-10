@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Button } from '../ui/Button';
-import { Modal } from '../ui/Modal';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Button } from "../ui/Button";
+import { Modal } from "../ui/Modal";
 
 interface VerificationModalProps {
   isOpen: boolean;
@@ -16,9 +16,9 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
   onVerify,
   onClose,
 }) => {
-  const [code, setCode] = useState(['', '', '', '', '', '']);
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [timeLeft, setTimeLeft] = useState(60);
 
   useEffect(() => {
@@ -30,11 +30,11 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
 
   const handleCodeChange = (index: number, value: string) => {
     if (value.length > 1) return;
-    
+
     const newCode = [...code];
     newCode[index] = value;
     setCode(newCode);
-    
+
     // Auto-focus next input
     if (value && index < 5) {
       const nextInput = document.getElementById(`code-${index + 1}`);
@@ -43,31 +43,31 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !code[index] && index > 0) {
+    if (e.key === "Backspace" && !code[index] && index > 0) {
       const prevInput = document.getElementById(`code-${index - 1}`);
       prevInput?.focus();
     }
   };
 
   const handleVerify = async () => {
-    const verificationCode = code.join('');
+    const verificationCode = code.join("");
     if (verificationCode.length !== 6) {
-      setError('Please enter the complete verification code');
+      setError("Please enter the complete verification code");
       return;
     }
 
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       const isValid = await onVerify(verificationCode);
       if (isValid) {
         onClose();
       } else {
-        setError('Invalid verification code');
+        setError("Invalid verification code");
       }
     } catch (error) {
-      setError('Verification failed. Please try again.');
+      setError("Verification failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -75,16 +75,25 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
 
   const handleResend = () => {
     setTimeLeft(60);
-    setCode(['', '', '', '', '', '']);
-    setError('');
+    setCode(["", "", "", "", "", ""]);
+    setError("");
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} showCloseButton={false}>
-      <div className="text-center">
+      <div className="relative text-center">
+        {/* Cancel/close button */}
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 text-gray-400 hover:text-black text-2xl font-bold focus:outline-none"
+          aria-label="Cancel registration"
+        >
+          &times;
+        </button>
         <h2 className="text-2xl font-bold mb-2">Verify Your Phone</h2>
         <p className="text-gray-600 mb-6">
-          We've sent a verification code to<br />
+          We've sent a verification code to
+          <br />
           <span className="font-medium">{phone}</span>
         </p>
 
@@ -125,9 +134,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
 
         <div className="text-center">
           {timeLeft > 0 ? (
-            <p className="text-gray-600 text-sm">
-              Resend code in {timeLeft}s
-            </p>
+            <p className="text-gray-600 text-sm">Resend code in {timeLeft}s</p>
           ) : (
             <button
               onClick={handleResend}

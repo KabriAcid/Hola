@@ -217,7 +217,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
         <Button
           type="submit"
-          className="w-full border border-black text-gray-900 bg-transparent hover:bg-gray-900 hover:text-white"
+          className="w-full border border-black text-black bg-transparent hover:bg-black hover:text-white transition-colors duration-200"
           isLoading={isLoading}
         >
           Create Account

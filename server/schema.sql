@@ -10,9 +10,19 @@ CREATE TABLE users (
   country TEXT,
   city TEXT,
   is_verified BOOLEAN DEFAULT 0,
+  verification_code TEXT,
   last_login DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+-- Verification codes table (optional, for audit/logging)
+CREATE TABLE verification_codes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  code TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  expires_at DATETIME,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE contacts (

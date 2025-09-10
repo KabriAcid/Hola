@@ -9,13 +9,25 @@ import { apiService } from "../services/api";
 
 export const AuthPage: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState(false);
-  const [showVerification, setShowVerification] = React.useState(false);
-  const [pendingUser, setPendingUser] = React.useState<{
-    name: string;
-    phone: string;
-    password: string;
-  } | null>(null);
-  const location = useLocation();
+  // Restore verification state from localStorage if present, but only show modal on /register
+  const isRegister = location.pathname.endsWith("register");
+  const [showVerification, setShowVerification] = React.useState(() => {
+    return (
+      isRegister && localStorage.getItem("hola_showVerification") === "true"
+    );
+  });
+  const [pendingPhone, setPendingPhone] = React.useState<string | null>(() => {
+    return isRegister
+      ? localStorage.getItem("hola_pendingPhone") || null
+      : null;
+  });
+  const [registrationCode, setRegistrationCode] = React.useState<string | null>(
+    () => {
+      return isRegister
+        ? localStorage.getItem("hola_registrationCode") || null
+        : null;
+    }
+  );
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
 
@@ -53,9 +65,15 @@ export const AuthPage: React.FC = () => {
   ) => {
     setIsLoading(true);
     try {
+      // Generate a random 6-digit code for demo (in real app, backend should send this)
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
       await apiService.register(name, phone, password);
-      setPendingUser({ name, phone, password });
+      setPendingPhone(phone);
+      setRegistrationCode(code);
       setShowVerification(true);
+      localStorage.setItem("hola_showVerification", "true");
+      localStorage.setItem("hola_pendingPhone", phone);
+      localStorage.setItem("hola_registrationCode", code);
     } catch (error) {
       throw error;
     } finally {
@@ -65,18 +83,17 @@ export const AuthPage: React.FC = () => {
 
   // Only allow '000000' as the valid code
   const handleVerification = async (code: string) => {
-    if (!pendingUser) return false;
-    if (code === "000000") {
+    if (!pendingPhone || !registrationCode) return false;
+    if (code === registrationCode) {
       // Simulate login after verification
       try {
-        await apiService.register(
-          pendingUser.name,
-          pendingUser.phone,
-          pendingUser.password
-        );
-        await handleLogin(pendingUser.phone, pendingUser.password);
-        setPendingUser(null);
+        await handleLogin(pendingPhone, "verified");
+        setPendingPhone(null);
+        setRegistrationCode(null);
         setShowVerification(false);
+        localStorage.removeItem("hola_showVerification");
+        localStorage.removeItem("hola_pendingPhone");
+        localStorage.removeItem("hola_registrationCode");
       } catch (error) {
         return false;
       }
@@ -86,8 +103,7 @@ export const AuthPage: React.FC = () => {
     return false;
   };
 
-  // Determine which form to show based on location.pathname
-  const isRegister = location.pathname.endsWith("register");
+  // ...existing code...
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
@@ -126,13 +142,28 @@ export const AuthPage: React.FC = () => {
         </AnimatePresence>
       </div>
 
+      {/* Only show VerificationModal if on register page and verification state is set */}
       <VerificationModal
-        isOpen={showVerification}
-        phone={pendingUser?.phone || ""}
+        isOpen={isRegister && showVerification}
+        phone={pendingPhone || ""}
         onVerify={handleVerification}
-        onClose={() => {
+        onClose={async () => {
+          // Call backend to delete pending registration if code exists
+          if (registrationCode) {
+            try {
+              await fetch(`/api/pending-registration/${registrationCode}`, {
+                method: "DELETE",
+              });
+            } catch (e) {
+              // Ignore errors
+            }
+          }
           setShowVerification(false);
-          setPendingUser(null);
+          setPendingPhone(null);
+          setRegistrationCode(null);
+          localStorage.removeItem("hola_showVerification");
+          localStorage.removeItem("hola_pendingPhone");
+          localStorage.removeItem("hola_registrationCode");
         }}
       />
     </div>

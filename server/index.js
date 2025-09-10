@@ -1,3 +1,11 @@
+// Utility to wrap async route handlers and catch errors
+function asyncHandler(fn) {
+  return function (req, res, next) {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+}
+
+// (Route will be re-added below)
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
 const { body, validationResult } = require("express-validator");
@@ -70,6 +78,11 @@ io.on("connection", (socket) => {
 const db = new sqlite3.Database("./hola.sqlite", (err) => {
   if (err) {
     console.error("Failed to connect to SQLite database:", err.message);
+  } else {
+    // Enable WAL mode for better concurrency
+    db.run("PRAGMA journal_mode = WAL;");
+    // Set busy timeout to 5 seconds
+    db.run("PRAGMA busy_timeout = 5000;");
   }
 });
 
@@ -135,65 +148,72 @@ app.post(
       .isLength({ min: 6 })
       .withMessage("Password must be at least 6 characters"),
   ],
-  async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return sendError(res, 400, errors.array()[0].msg);
-      }
-      // Sanitize input
-      const phone = xss(req.body.phone);
-      const name = xss(req.body.name || "");
-      let username = xss(req.body.username || "");
-      const password = xss(req.body.password);
-      // Auto-generate username if not provided
-      if (!username) {
-        const firstName = name.split(" ")[0] || "user";
-        const last2 = phone.slice(-2);
-        username = `${firstName}${last2}`;
-      }
-      // Defaults
-      const avatar = "default.png";
-      const bio = "Not available";
-      const country = "Nigeria";
-      const is_verified = 0;
-      if (await dbGet("SELECT id FROM users WHERE phone = ?", [phone])) {
-        return sendError(res, 409, "Phone already exists.");
-      }
-      if (
-        username &&
-        (await dbGet("SELECT id FROM users WHERE username = ?", [username]))
-      ) {
-        return sendError(res, 409, "Username already exists.");
-      }
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const insertSql = `INSERT INTO users (phone, name, username, avatar, bio, country, is_verified, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-      const insertResult = await dbRun(insertSql, [
-        phone,
-        name,
-        username,
-        avatar,
-        bio,
-        country,
-        is_verified,
-        hashedPassword,
-      ]);
-      const user = {
-        id: insertResult.lastID,
-        phone,
-        name,
-        username,
-        avatar,
-        bio,
-        country,
-        is_verified,
-      };
-      res.status(201).json(userToResponse(user));
-    } catch (err) {
-      console.error(err);
-      return sendError(res, 500, "Database error.");
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return sendError(res, 400, errors.array()[0].msg);
     }
-  }
+    // Sanitize input
+    const phone = xss(req.body.phone);
+    const name = xss(req.body.name || "");
+    let username = xss(req.body.username || "");
+    const password = xss(req.body.password);
+    // Auto-generate username if not provided
+    if (!username) {
+      const firstName = name.split(" ")[0] || "user";
+      const last2 = phone.slice(-2);
+      username = `${firstName}${last2}`;
+    }
+    // Defaults
+    const avatar = "default.png";
+    const bio = "Not available";
+    const country = "Nigeria";
+    const is_verified = 0;
+    if (await dbGet("SELECT id FROM users WHERE phone = ?", [phone])) {
+      return sendError(res, 409, "Phone already exists.");
+    }
+    if (
+      username &&
+      (await dbGet("SELECT id FROM users WHERE username = ?", [username]))
+    ) {
+      return sendError(res, 409, "Username already exists.");
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generate a random 6-digit verification code
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+    // Save user (without verification_code field)
+    const insertSql = `INSERT INTO users (phone, name, username, avatar, bio, country, is_verified, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const insertResult = await dbRun(insertSql, [
+      phone,
+      name,
+      username,
+      avatar,
+      bio,
+      country,
+      is_verified,
+      hashedPassword,
+    ]);
+    // Save verification code in verification_codes table
+    await dbRun(
+      `INSERT INTO verification_codes (user_id, code, created_at) VALUES (?, ?, datetime('now'))`,
+      [insertResult.lastID, verificationCode]
+    );
+    // Log the code for debugging
+    console.log(`Verification code for ${phone}: ${verificationCode}`);
+    const user = {
+      id: insertResult.lastID,
+      phone,
+      name,
+      username,
+      avatar,
+      bio,
+      country,
+      is_verified,
+    };
+    res.status(201).json(userToResponse(user));
+  })
 );
 
 // Login endpoint (returns JWT)
@@ -265,7 +285,8 @@ app.get("/api/user/:username", async (req, res) => {
     );
     if (!user) return sendError(res, 404, "User not found");
     res.json(userToResponse(user));
-  } catch (err) {w
+  } catch (err) {
+    w;
     console.error(err);
     return sendError(res, 500, "Database error");
   }
@@ -292,6 +313,27 @@ app.get("/api/call-logs", (req, res) => {
   );
 });
 
+// Delete pending registration by verification code
+app.delete(
+  "/api/pending-registration/:code",
+  asyncHandler(async (req, res) => {
+    const code = req.params.code;
+    if (!code) return sendError(res, 400, "Missing code");
+    // Find user with this verification_code and not verified
+    const user = await dbGet(
+      `SELECT u.id FROM users u
+        JOIN verification_codes v ON v.user_id = u.id
+        WHERE v.code = ? AND u.is_verified = 0`,
+      [code]
+    );
+    if (!user) return sendError(res, 404, "No pending registration found");
+    // Delete user
+    await dbRun("DELETE FROM users WHERE id = ?", [user.id]);
+    // Delete verification code
+    await dbRun("DELETE FROM verification_codes WHERE code = ?", [code]);
+    return res.json({ success: true });
+  })
+);
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });

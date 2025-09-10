@@ -36,7 +36,7 @@ function App() {
                 isAuthenticated ? <Navigate to="/app" replace /> : <AuthPage />
               }
             />
-              <Route path="/register" element={<AuthPage />} />
+            <Route path="/register" element={<AuthPage />} />
             <Route path="/logout" element={<LogoutPage />} />
             {/* Main app route (protected) */}
             <Route path="/app/*" element={<MainApp key="main-app" />} />
