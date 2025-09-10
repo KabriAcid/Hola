@@ -7,11 +7,9 @@ import {
 } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { useAuth } from "./hooks/useAuth";
-import { AuthPage } from "./pages/AuthPage";
 import { MainApp } from "./pages/MainApp";
+import NotFound from "./pages/ErrorPage";
 import { LoadingSpinner } from "./components/ui/LoadingSpinner";
-import NotFound from "./pages/404";
-
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -31,26 +29,8 @@ function App() {
           <Routes>
             {/* Public routes for authentication */}
             <Route path="*" element={<NotFound />} />
-            <Route
-              path="/"
-              element={
-                !isAuthenticated ? (
-                  <AuthPage key="auth-page" />
-                ) : (
-                  <Navigate to="/app" replace />
-                )
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                !isAuthenticated ? (
-                  <AuthPage key="auth-page-register" />
-                ) : (
-                  <Navigate to="/app" replace />
-                )
-              }
-            />
+            <Route path="/" element={<Navigate to="/app" replace />} />
+            <Route path="/register" element={<Navigate to="/app" replace />} />
             {/* Protected main app route */}
             <Route path="/app/*" element={<MainApp key="main-app" />} />
             {/* 404 fallback */}
