@@ -123,7 +123,7 @@ export const MainApp: React.FC = () => {
     setContactsError(null);
     fetch("/api/contacts", {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
       },
     })
       .then((res) => {
@@ -433,7 +433,6 @@ export const MainApp: React.FC = () => {
                         }}
                         onDelete={handleDeleteContact}
                         onToggleFavorite={handleToggleFavorite}
-                        items={filteredContacts}
                       />
                     )}
                   </motion.div>

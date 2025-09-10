@@ -28,7 +28,7 @@ export const ContactList: React.FC<ContactListProps> = ({
     setError(null);
     fetch("/api/contacts", {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
       },
     })
       .then((res) => {
