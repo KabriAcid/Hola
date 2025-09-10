@@ -25,8 +25,7 @@ export const AuthPage: React.FC = () => {
   const handleLogin = async (phone: string, password: string) => {
     setIsLoading(true);
     try {
-      const user = await apiService.login(phone, password);
-      login(user);
+      await login(phone, password);
     } catch (error) {
       throw error;
     } finally {
@@ -38,7 +37,8 @@ export const AuthPage: React.FC = () => {
     setIsLoading(true);
     try {
       const user = await apiService.truecallerLogin();
-      login(user);
+      // For demo, treat Truecaller login as phone login
+      await login(user.phone, "truecaller");
     } catch (error) {
       throw error;
     } finally {
@@ -69,12 +69,12 @@ export const AuthPage: React.FC = () => {
     if (code === "000000") {
       // Simulate login after verification
       try {
-        const user = await apiService.register(
+        await apiService.register(
           pendingUser.name,
           pendingUser.phone,
           pendingUser.password
         );
-        login(user);
+        await handleLogin(pendingUser.phone, pendingUser.password);
         setPendingUser(null);
         setShowVerification(false);
       } catch (error) {
@@ -103,7 +103,7 @@ export const AuthPage: React.FC = () => {
             >
               <RegisterForm
                 onRegister={handleRegister}
-                onSwitchToLogin={() => window.location.replace("/")}
+                onSwitchToLogin={() => navigate("/login")}
                 isLoading={isLoading}
               />
             </motion.div>
@@ -118,7 +118,7 @@ export const AuthPage: React.FC = () => {
               <LoginForm
                 onLogin={handleLogin}
                 onTruecallerLogin={handleTruecallerLogin}
-                onSwitchToRegister={() => window.location.replace("/register")}
+                onSwitchToRegister={() => navigate("/register")}
                 isLoading={isLoading}
               />
             </motion.div>

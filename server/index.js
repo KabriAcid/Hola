@@ -265,7 +265,7 @@ app.get("/api/user/:username", async (req, res) => {
     );
     if (!user) return sendError(res, 404, "User not found");
     res.json(userToResponse(user));
-  } catch (err) {
+  } catch (err) {w
     console.error(err);
     return sendError(res, 500, "Database error");
   }
