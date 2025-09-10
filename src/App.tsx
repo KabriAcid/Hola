@@ -28,13 +28,20 @@ function App() {
       <div className="App">
         <AnimatePresence mode="wait">
           <Routes>
-            {/* Public routes for authentication */}
-            <Route path="*" element={<NotFound />} />
-            <Route path="/" element={<Navigate to="/app" replace />} />
-            <Route path="/register" element={<Navigate to="/app" replace />} />
+            {/* Auth & public routes */}
+            <Route
+              path="/login"
+              element={<Navigate to="/app" replace={!isAuthenticated} />}
+            />
+            <Route
+              path="/register"
+              element={<Navigate to="/login" replace />}
+            />
             <Route path="/logout" element={<LogoutPage />} />
-            {/* Protected main app route */}
+            {/* Main app route (protected) */}
             <Route path="/app/*" element={<MainApp key="main-app" />} />
+            {/* Redirect / to /login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
             {/* 404 fallback */}
             <Route path="*" element={<NotFound />} />
           </Routes>
