@@ -6,9 +6,12 @@ import { RegisterForm } from "../components/auth/RegisterForm";
 import { VerificationModal } from "../components/auth/VerificationModal";
 import { useAuth } from "../hooks/useAuth";
 import { apiService } from "../services/api";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 
-export const AuthPage: React.FC = () => {
+const AuthPage: React.FC = () => {
+  const location = useLocation();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [showOverlay, setShowOverlay] = React.useState(false);
   // Restore verification state from localStorage if present, but only show modal on /register
   const isRegister = location.pathname.endsWith("register");
   const [showVerification, setShowVerification] = React.useState(() => {
@@ -70,7 +73,12 @@ export const AuthPage: React.FC = () => {
       await apiService.register(name, phone, password);
       setPendingPhone(phone);
       setRegistrationCode(code);
-      setShowVerification(true);
+      setShowOverlay(true);
+      // Show overlay for 2 seconds before showing verification modal
+      setTimeout(() => {
+        setShowOverlay(false);
+        setShowVerification(true);
+      }, 2000);
       localStorage.setItem("hola_showVerification", "true");
       localStorage.setItem("hola_pendingPhone", phone);
       localStorage.setItem("hola_registrationCode", code);
@@ -109,6 +117,15 @@ export const AuthPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      {/* Overlay with loading spinner */}
+      {showOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="flex flex-col items-center">
+            <LoadingSpinner size="lg" />
+            <span className="mt-4 text-white text-lg font-semibold">Creating your account...</span>
+          </div>
+        </div>
+      )}
       <div className="w-full max-w-md">
         <AnimatePresence mode="wait">
           {isRegister ? (
@@ -171,3 +188,5 @@ export const AuthPage: React.FC = () => {
     </div>
   );
 };
+
+export default AuthPage;
