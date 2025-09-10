@@ -28,11 +28,19 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onUpdateProfile,
   onLogout,
 }) => {
+  // Provide default values if user is null or undefined
+  const safeUser = user || {
+    name: "Guest",
+    avatar: "/default.png",
+    phone: "N/A",
+    id: 1,
+    email: "N/A",
+  };
   const navigate = useNavigate();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState({
-    name: user.name,
-    avatar: user.avatar || "",
+    name: safeUser.name,
+    avatar: safeUser.avatar || "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -51,8 +59,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   };
 
   const handleLogout = () => {
-    onLogout();
-    navigate("/");
+    navigate("/logout");
   };
 
   const settingsGroups = [
@@ -118,10 +125,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           className="bg-white p-6 mb-6"
         >
           <div className="flex items-center space-x-4">
-            <Avatar src={user.avatar} alt={user.name} size="xl" />
+            <Avatar src={safeUser.avatar} alt={safeUser.name} size="xl" />
             <div className="flex-1">
-              <h2 className="text-xl font-semibold text-black">{user.name}</h2>
-              <p className="text-gray-600">{user.phone}</p>
+              <h2 className="text-xl font-semibold text-black">
+                {safeUser.name}
+              </h2>
+              <p className="text-gray-600">{safeUser.phone}</p>
             </div>
             <motion.button
               onClick={() => setShowProfileModal(true)}

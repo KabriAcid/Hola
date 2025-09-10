@@ -8,6 +8,7 @@ import {
 import { AnimatePresence } from "framer-motion";
 import { useAuth } from "./hooks/useAuth";
 import { MainApp } from "./pages/MainApp";
+import { LogoutPage } from "./pages/LogoutPage";
 import NotFound from "./pages/ErrorPage";
 import { LoadingSpinner } from "./components/ui/LoadingSpinner";
 
@@ -31,17 +32,11 @@ function App() {
             <Route path="*" element={<NotFound />} />
             <Route path="/" element={<Navigate to="/app" replace />} />
             <Route path="/register" element={<Navigate to="/app" replace />} />
+            <Route path="/logout" element={<LogoutPage />} />
             {/* Protected main app route */}
             <Route path="/app/*" element={<MainApp key="main-app" />} />
             {/* 404 fallback */}
-            <Route
-              path="*"
-              element={
-                <div className="min-h-screen flex items-center justify-center text-gray-500">
-                  404 - Page Not Found
-                </div>
-              }
-            />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </AnimatePresence>
       </div>
