@@ -52,16 +52,7 @@ function App() {
               }
             />
             {/* Protected main app route */}
-            <Route
-              path="/app/*"
-              element={
-                isAuthenticated ? (
-                  <MainApp key="main-app" />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
+            <Route path="/app/*" element={<MainApp key="main-app" />} />
             {/* 404 fallback */}
             <Route
               path="*"

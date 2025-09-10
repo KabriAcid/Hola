@@ -327,8 +327,6 @@ export const MainApp: React.FC = () => {
     return {};
   };
 
-  if (!user) return null;
-
   return (
     <div className="flex flex-col h-screen bg-white pb-16">
       <Header title={getHeaderTitle()} {...getHeaderProps()} />
