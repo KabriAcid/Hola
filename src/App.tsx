@@ -11,7 +11,7 @@ import { MainApp } from "./pages/MainApp";
 import { LogoutPage } from "./pages/LogoutPage";
 import NotFound from "./pages/ErrorPage";
 import { LoadingSpinner } from "./components/ui/LoadingSpinner";
-import { AuthPage } from "./pages/AuthPage";
+import AuthPage from "./pages/AuthPage";
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -33,13 +33,26 @@ function App() {
             <Route
               path="/login"
               element={
-                isAuthenticated ? <Navigate to="/app" replace /> : <AuthPage />
+                isAuthenticated ? (
+                  <Navigate to="/app/calls" replace />
+                ) : (
+                  <AuthPage />
+                )
               }
             />
             <Route path="/register" element={<AuthPage />} />
             <Route path="/logout" element={<LogoutPage />} />
             {/* Main app route (protected) */}
-            <Route path="/app/*" element={<MainApp key="main-app" />} />
+            <Route
+              path="/app/*"
+              element={
+                isAuthenticated ? (
+                  <MainApp key="main-app" />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
             {/* Redirect / to /login */}
             <Route path="/" element={<Navigate to="/login" replace />} />
             {/* 404 fallback */}

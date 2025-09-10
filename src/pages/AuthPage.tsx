@@ -41,6 +41,7 @@ const AuthPage: React.FC = () => {
     setIsLoading(true);
     try {
       await login(phone, password);
+      navigate("/app/calls");
     } catch (error) {
       throw error;
     } finally {
@@ -122,7 +123,9 @@ const AuthPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="flex flex-col items-center">
             <LoadingSpinner size="lg" />
-            <span className="mt-4 text-white text-lg font-semibold">Creating your account...</span>
+            <span className="mt-4 text-white text-lg font-semibold">
+              Creating your account...
+            </span>
           </div>
         </div>
       )}

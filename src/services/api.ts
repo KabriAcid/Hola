@@ -61,12 +61,16 @@ export const apiService = {
   },
 
   async register(name: string, phone: string, password: string): Promise<User> {
-    await delay(1500);
-    return {
-      id: `user_${Date.now()}`,
-      name,
-      phone,
-    };
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, phone, password }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Registration failed");
+    }
+    return await res.json();
   },
 
   async verifyCode(phone: string, code: string): Promise<boolean> {

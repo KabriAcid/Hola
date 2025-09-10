@@ -17,6 +17,7 @@ export const useAuth = () => {
         const user = await apiService.getCurrentUser();
         setAuthState({ isAuthenticated: true, user, isLoading: false });
       } catch (err) {
+        apiService.setToken(null);
         setAuthState({ isAuthenticated: false, user: null, isLoading: false });
       }
     };
@@ -28,7 +29,9 @@ export const useAuth = () => {
     try {
       const user = await apiService.login(phone, password);
       setAuthState({ isAuthenticated: true, user, isLoading: false });
+      // Persist token in localStorage (already handled by apiService)
     } catch (err) {
+      apiService.setToken(null);
       setAuthState({ isAuthenticated: false, user: null, isLoading: false });
       throw err;
     }

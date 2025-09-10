@@ -169,7 +169,7 @@ app.post(
     const bio = "Not available";
     const country = "Nigeria";
     const is_verified = 0;
-    if (await dbGet("SELECT id FROM users WHERE phone = ?", [phone])) {
+    if (await dbGet("SELECT id FROM users WHERE phone = ? AND is_verified = 1", [phone])) {
       return sendError(res, 409, "Phone already exists.");
     }
     if (
