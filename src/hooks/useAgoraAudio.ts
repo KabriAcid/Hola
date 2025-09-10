@@ -33,13 +33,18 @@ export function useAgoraAudio({
       mediaType: "audio" | "video"
     ) => {
       if (mediaType === "audio") {
+        console.log("[DEBUG][Agora] Remote user published:", user.uid);
         await client.subscribe(user, mediaType);
         const remoteAudioTrack = user.audioTrack as IRemoteAudioTrack;
-        remoteAudioTrack?.play();
+        if (remoteAudioTrack) {
+          remoteAudioTrack.play();
+          console.log("[DEBUG][Agora] Playing remote audio for UID:", user.uid);
+        }
         setRemoteUsers((prev) => Array.from(new Set([...prev, user.uid])));
       }
     };
     const handleUserUnpublished = (user: any) => {
+      console.log("[DEBUG][Agora] Remote user unpublished:", user.uid);
       setRemoteUsers((prev) => prev.filter((id) => id !== user.uid));
     };
     client.on("user-published", handleUserPublished);
@@ -51,15 +56,18 @@ export function useAgoraAudio({
 
   const join = async () => {
     if (!clientRef.current) return;
+    console.log("[DEBUG][Agora] Joining channel:", channel, "with UID:", uid);
     await clientRef.current.join(appId, channel, token || null, uid || null);
     const localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
     localAudioTrackRef.current = localAudioTrack;
     await clientRef.current.publish([localAudioTrack]);
+    console.log("[DEBUG][Agora] Published local audio track");
     setJoined(true);
   };
 
   const leave = async () => {
     if (!clientRef.current) return;
+    console.log("[DEBUG][Agora] Leaving channel:", channel);
     localAudioTrackRef.current?.close();
     await clientRef.current.leave();
     setJoined(false);

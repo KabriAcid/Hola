@@ -23,6 +23,7 @@ import { useCall } from "../hooks/useCall";
 import { getSocket } from "../socket";
 import { apiService } from "../services/api";
 import { Contact, CallLog, Conversation, Message } from "../types";
+import { useAgoraAudio } from "../hooks/useAgoraAudio";
 
 export const MainApp: React.FC = () => {
   // Track if call is answered (for CallScreen)
@@ -30,6 +31,7 @@ export const MainApp: React.FC = () => {
   // Store channel for Agora (if needed)
   const [callChannel, setCallChannel] = useState<string | null>(null);
 
+  // Auth must be declared before any useEffect that references 'user'
   const { user, updateUser, logout } = useAuth();
   const {
     callState,
@@ -40,6 +42,24 @@ export const MainApp: React.FC = () => {
     answerCall,
   } = useCall();
 
+  const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID as string;
+  const AGORA_APP_CERTIFICATE = import.meta.env.VITE_AGORA_APP_CERTIFICATE as string;
+  
+  // Debug log for Agora App ID and channel
+  useEffect(() => {
+    console.log("[DEBUG] AGORA_APP_ID:", AGORA_APP_ID);
+    console.log("[DEBUG] AGORA_APP_CERTIFICATE:", AGORA_APP_CERTIFICATE);
+    console.log("[DEBUG] callChannel:", callChannel);
+    if (user) console.log("[DEBUG] user UID:", user.phone);
+  }, [AGORA_APP_ID, AGORA_APP_CERTIFICATE, callChannel, user]);
+
+  // Setup Agora audio hook (only when channel is set and call is answered)
+  const agora = useAgoraAudio({
+    appId: AGORA_APP_ID,
+    channel: callChannel || "",
+    // Optionally: token: undefined, uid: user?.phone
+  });
+
   // Contacts state is now fetched from backend
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactsLoading, setContactsLoading] = useState(true);
@@ -47,6 +67,17 @@ export const MainApp: React.FC = () => {
 
   // Socket.io setup
   const socketRef = useRef<any>(null);
+
+  // Join/leave Agora channel on call answer/end
+  useEffect(() => {
+    if (isCallAnswered && callChannel) {
+      agora.join();
+    } else {
+      agora.leave();
+    }
+    // Only run when call is answered or channel changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCallAnswered, callChannel]);
 
   useEffect(() => {
     if (!user) return;
