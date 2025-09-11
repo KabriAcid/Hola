@@ -9,6 +9,7 @@ CREATE TABLE users (
   bio TEXT,
   country TEXT,
   city TEXT,
+  password TEXT,
   is_verified BOOLEAN DEFAULT 0,
   truecaller_id TEXT UNIQUE, -- For Truecaller integration
   last_login DATETIME,

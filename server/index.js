@@ -90,7 +90,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    if (socket.phone && userSockets[socket.phone] === socket.id) {
+    if (socket.phone && userSockets[socket.phone] == socket.id) {
       delete userSockets[socket.phone];
       console.log(`User disconnected: ${socket.phone}`);
     }
@@ -199,17 +199,18 @@ app.post(
     const bio = "Not available";
     const country = "Nigeria";
     const is_verified = 0;
-    if (
-      await dbGet("SELECT id FROM users WHERE phone = ? AND is_verified = 1", [
-        phone,
-      ])
-    ) {
+    // Check for existing user by phone
+    const existingUser = await dbGet("SELECT * FROM users WHERE phone = ?", [
+      phone,
+    ]);
+    // Check for existing username
+    const existingUsername = username
+      ? await dbGet("SELECT * FROM users WHERE username = ?", [username])
+      : null;
+    if (existingUser && existingUser.is_verified == 1) {
       return sendError(res, 409, "Phone already exists.");
     }
-    if (
-      username &&
-      (await dbGet("SELECT id FROM users WHERE username = ?", [username]))
-    ) {
+    if (existingUsername && existingUsername.is_verified == 1) {
       return sendError(res, 409, "Username already exists.");
     }
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -217,27 +218,46 @@ app.post(
     const verificationCode = Math.floor(
       100000 + Math.random() * 900000
     ).toString();
-    // Save user (without verification_code field)
-    const insertSql = `INSERT INTO users (phone, name, username, avatar, bio, country, is_verified, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-    const insertResult = await dbRun(insertSql, [
-      phone,
-      name,
-      username,
-      avatar,
-      bio,
-      country,
-      is_verified,
-      hashedPassword,
-    ]);
-    // Save verification code in verification_codes table
+    let userId;
+    if (existingUser && existingUser.is_verified == 0) {
+      // Update incomplete registration
+      await dbRun(
+        `UPDATE users SET name = ?, username = ?, avatar = ?, bio = ?, country = ?, password = ? WHERE id = ?`,
+        [name, username, avatar, bio, country, hashedPassword, existingUser.id]
+      );
+      userId = existingUser.id;
+    } else if (existingUsername && existingUsername.is_verified == 0) {
+      // Update incomplete registration by username
+      await dbRun(
+        `UPDATE users SET phone = ?, name = ?, avatar = ?, bio = ?, country = ?, password = ? WHERE id = ?`,
+        [phone, name, avatar, bio, country, hashedPassword, existingUsername.id]
+      );
+      userId = existingUsername.id;
+    } else {
+      // New registration
+      const insertSql = `INSERT INTO users (phone, name, username, avatar, bio, country, is_verified, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+      const insertResult = await dbRun(insertSql, [
+        phone,
+        name,
+        username,
+        avatar,
+        bio,
+        country,
+        is_verified,
+        hashedPassword,
+      ]);
+      userId = insertResult.lastID;
+    }
+    // Save verification code in verification_codes table (delete old first)
+    await dbRun(`DELETE FROM verification_codes WHERE user_id = ?`, [userId]);
     await dbRun(
       `INSERT INTO verification_codes (user_id, code, created_at) VALUES (?, ?, datetime('now'))`,
-      [insertResult.lastID, verificationCode]
+      [userId, verificationCode]
     );
     // Log the code for debugging
     console.log(`Verification code for ${phone}: ${verificationCode}`);
     const user = {
-      id: insertResult.lastID,
+      id: userId,
       phone,
       name,
       username,
@@ -264,8 +284,11 @@ app.post(
       [phone, code]
     );
     if (!user) return sendError(res, 400, "Invalid verification code");
-    // Mark user as verified
-    await dbRun("UPDATE users SET is_verified = 1 WHERE id = ?", [user.id]);
+    // Mark user as verified and update last_login
+    await dbRun(
+      "UPDATE users SET is_verified = 1, last_login = datetime('now') WHERE id = ?",
+      [user.id]
+    );
     // Delete verification code
     await dbRun("DELETE FROM verification_codes WHERE code = ?", [code]);
     return res.json({ success: true });
