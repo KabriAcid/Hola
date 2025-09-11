@@ -30,6 +30,7 @@ export const Avatar: React.FC<AvatarProps> = ({
     xl: 'w-12 h-12',
   };
 
+  
   return (
     <div className={`relative ${sizeClasses[size]} ${className}`}>
       <div className={`${sizeClasses[size]} rounded-full overflow-hidden bg-gray-200 flex items-center justify-center`}>

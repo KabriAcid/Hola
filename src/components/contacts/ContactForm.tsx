@@ -40,8 +40,8 @@ export const ContactForm: React.FC<ContactFormProps> = ({
   }, [contact, isOpen]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Nigerian phone number regex (same as registration backend: isMobilePhone('en-NG'))
-  const nigerianPhoneRegex = /^(\+234|0)[789][01]\d{8}$/;
+  // Nigerian phone number regex (must start with 080, 081, 070, or 090 and be 11 digits)
+  const nigerianPhoneRegex = /^0(70|80|81|90)\d{8}$/;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateForm = () => {
@@ -55,7 +55,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({
       newErrors.phone = "Phone number is required";
     } else if (!nigerianPhoneRegex.test(formData.phone.trim())) {
       newErrors.phone =
-        "Enter a valid Nigerian phone number (e.g. 08012345678 or +2348012345678)";
+        "Phone must start with 080, 081, 070, or 090 and be 11 digits (e.g. 08012345678)";
     }
 
     setErrors(newErrors);
@@ -72,7 +72,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({
       setErrors((prev) => ({
         ...prev,
         phone:
-          "Enter a valid Nigerian phone number (e.g. 08012345678 or +2348012345678)",
+          "Phone must start with 080, 081, 070, or 090 and be 11 digits (e.g. 08012345678)",
       }));
     } else {
       setErrors((prev) => {
@@ -101,7 +101,12 @@ export const ContactForm: React.FC<ContactFormProps> = ({
       });
       onClose();
     } catch (error) {
-      setErrors({ general: "Failed to save contact" });
+      // Show backend error if available
+      if (error && error.message) {
+        setErrors({ general: error.message });
+      } else {
+        setErrors({ general: "Failed to save contact" });
+      }
     }
   };
 

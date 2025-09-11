@@ -128,7 +128,7 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                 className="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium"
                 style={{ textDecoration: "none" }}
               >
-                Add your first contact
+                Make your first call
               </a>
             </div>
           </div>

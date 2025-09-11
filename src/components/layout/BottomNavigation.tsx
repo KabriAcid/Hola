@@ -46,7 +46,7 @@ export const BottomNavigation: React.FC = () => {
               {isActive && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-black rounded-full"
+                  className="absolute bottom-0 h-1 bg-black rounded-full w-4 h-1 bg-black rounded-full"
                 />
               )}
             </motion.button>

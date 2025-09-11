@@ -1,6 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import ReactDOM from "react-dom";
 import { motion } from "framer-motion";
-import { Phone, MessageCircle, Star, Edit, Trash2 } from "lucide-react";
+import {
+  Phone,
+  MessageCircle,
+  Star,
+  Edit,
+  Trash2,
+  MoreVertical,
+} from "lucide-react";
 import { Contact } from "../../types";
 import { Avatar } from "../ui/Avatar";
 import { ContactForm } from "./ContactForm";
@@ -26,7 +34,11 @@ export const ContactList: React.FC<ContactListProps> = ({
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editContact, setEditContact] = useState<Contact | null>(null);
-  // ...existing code...
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -49,10 +61,140 @@ export const ContactList: React.FC<ContactListProps> = ({
         setLoading(false);
       });
   }, []);
+  // ContactItem component
+  const ContactItem: React.FC<{ contact: Contact; index: number }> = ({
+    contact,
+    index,
+  }) => {
+    const itemEllipsisRef = useRef<HTMLButtonElement | null>(null);
 
-  // Handlers to update state after edit/delete/favorite
+    useEffect(() => {
+      if (dropdownOpen === contact.id && itemEllipsisRef.current) {
+        const rect = itemEllipsisRef.current.getBoundingClientRect();
+        setDropdownPos({
+          top: rect.bottom + window.scrollY + 4,
+          left: rect.right - 160,
+        });
+      }
+    }, [dropdownOpen, contact.id]);
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+        className="flex items-center justify-between p-4 bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center flex-1">
+          <Avatar
+            src={contact.avatar}
+            alt={contact.name}
+            size="md"
+            isOnline={contact.isOnline}
+          />
+          <div className="ml-3 flex-1">
+            <div className="flex items-center">
+              <h3 className="font-medium text-black">{contact.name}</h3>
+              {contact.isFavorite && (
+                <Star className="w-4 h-4 ml-2 text-yellow-500 fill-current" />
+              )}
+            </div>
+            <p className="text-sm text-gray-600">{contact.phone}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2 relative">
+          <motion.button
+            onClick={() => onMessage(contact)}
+            className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+            whileTap={{ scale: 0.95 }}
+          >
+            <MessageCircle className="w-5 h-5 text-gray-600" />
+          </motion.button>
+
+          <motion.button
+            onClick={() => onCall(contact)}
+            className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+            whileTap={{ scale: 0.95 }}
+          >
+            <Phone className="w-5 h-5 text-green-600" />
+          </motion.button>
+
+          {/* Ellipsis Dropdown */}
+          <motion.button
+            ref={itemEllipsisRef}
+            onClick={() => {
+              if (dropdownOpen === contact.id) {
+                setDropdownOpen(null);
+              } else {
+                setDropdownOpen(contact.id);
+              }
+            }}
+            className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+            whileTap={{ scale: 0.95 }}
+          >
+            <MoreVertical className="w-5 h-5 text-gray-600" />
+          </motion.button>
+          {dropdownOpen === contact.id &&
+            dropdownPos &&
+            ReactDOM.createPortal(
+              <div
+                style={{
+                  position: "absolute",
+                  top: dropdownPos.top,
+                  left: dropdownPos.left,
+                  zIndex: 9999,
+                  minWidth: 160,
+                }}
+                className="bg-white border border-gray-200 rounded-lg shadow-lg min-w-[140px] py-2 flex flex-col"
+              >
+                <button
+                  className="flex items-center px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
+                  onClick={() => {
+                    setDropdownOpen(null);
+                    handleEdit(contact);
+                  }}
+                >
+                  <Edit className="w-4 h-4 mr-2 text-gray-600" /> Edit
+                </button>
+                <button
+                  className="flex items-center px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
+                  onClick={() => {
+                    setDropdownOpen(null);
+                    onToggleFavorite(contact.id);
+                  }}
+                >
+                  {contact.isFavorite ? (
+                    <Star className="w-4 h-4 mr-2 text-yellow-500 fill-current" />
+                  ) : (
+                    <Star className="w-4 h-4 mr-2 text-gray-400" />
+                  )}
+                  {contact.isFavorite ? "Unfavorite" : "Favorite"}
+                </button>
+                <button
+                  className="flex items-center px-4 py-2 hover:bg-gray-100 text-sm text-red-600"
+                  onClick={() => {
+                    setDropdownOpen(null);
+                    handleDelete(contact.id);
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 mr-2 text-red-600" /> Delete
+                </button>
+              </div>,
+              document.body
+            )}
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Helper functions for edit and delete
+  const handleEdit = (contact: Contact) => {
+    setEditContact(contact);
+    setShowAddModal(true);
+  };
+
   const handleDelete = async (contactId: string) => {
-    setIsSaving(true);
     try {
       const res = await fetch(`/api/contacts/${contactId}`, {
         method: "DELETE",
@@ -62,104 +204,14 @@ export const ContactList: React.FC<ContactListProps> = ({
       });
       if (!res.ok) throw new Error("Failed to delete contact");
       setContacts((prev) => prev.filter((c) => c.id !== contactId));
-      onDelete(contactId);
     } catch (err) {
       setError((err as Error).message || "Error deleting contact");
-    } finally {
-      setIsSaving(false);
     }
   };
-  const handleToggleFavorite = (contactId: string) => {
-    setContacts((prev) =>
-      prev.map((c) =>
-        c.id === contactId ? { ...c, isFavorite: !c.isFavorite } : c
-      )
-    );
-    onToggleFavorite(contactId);
-  };
-  const handleEdit = (contact: Contact) => {
-    setEditContact(contact);
-    setShowAddModal(true);
-  };
 
+  // Split contacts into favorites and regular
   const favorites = contacts.filter((c) => c.isFavorite);
   const regular = contacts.filter((c) => !c.isFavorite);
-
-  const ContactItem: React.FC<{ contact: Contact; index: number }> = ({
-    contact,
-    index,
-  }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="flex items-center justify-between p-4 bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors"
-    >
-      <div className="flex items-center flex-1">
-        <Avatar
-          src={contact.avatar}
-          alt={contact.name}
-          size="md"
-          isOnline={contact.isOnline}
-        />
-        <div className="ml-3 flex-1">
-          <div className="flex items-center">
-            <h3 className="font-medium text-black">{contact.name}</h3>
-            {contact.isFavorite && (
-              <Star className="w-4 h-4 ml-2 text-yellow-500 fill-current" />
-            )}
-          </div>
-          <p className="text-sm text-gray-600">{contact.phone}</p>
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <motion.button
-          onClick={() => onMessage(contact)}
-          className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-          whileTap={{ scale: 0.95 }}
-        >
-          <MessageCircle className="w-5 h-5 text-gray-600" />
-        </motion.button>
-
-        <motion.button
-          onClick={() => onCall(contact)}
-          className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-          whileTap={{ scale: 0.95 }}
-        >
-          <Phone className="w-5 h-5 text-green-600" />
-        </motion.button>
-
-        <motion.button
-          onClick={() => handleEdit(contact)}
-          className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-          whileTap={{ scale: 0.95 }}
-        >
-          <Edit className="w-4 h-4 text-gray-600" />
-        </motion.button>
-
-        <motion.button
-          onClick={() => onToggleFavorite(contact.id)}
-          className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-          whileTap={{ scale: 0.95 }}
-        >
-          {contact.isFavorite ? (
-            <Star className="w-4 h-4 text-yellow-500 fill-current" />
-          ) : (
-            <Star className="w-4 h-4 text-gray-400" />
-          )}
-        </motion.button>
-
-        <motion.button
-          onClick={() => handleDelete(contact.id)}
-          className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-          whileTap={{ scale: 0.95 }}
-        >
-          <Trash2 className="w-4 h-4 text-red-600" />
-        </motion.button>
-      </div>
-    </motion.div>
-  );
 
   return (
     <div className="flex-1 overflow-y-auto">
