@@ -431,7 +431,7 @@ app.get("/api/contacts", authenticateJWT, async (req, res) => {
   try {
     const rows = await new Promise((resolve, reject) => {
       db.all(
-        `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, label, initials, notes, birthday FROM contacts WHERE user_id = ? ORDER BY name COLLATE NOCASE`,
+        `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, label, notes, created_at, updated_at FROM contacts WHERE owner_id = ? ORDER BY name COLLATE NOCASE`,
         [req.user.id],
         (err, rows) => {
           if (err) reject(err);
@@ -446,25 +446,28 @@ app.get("/api/contacts", authenticateJWT, async (req, res) => {
   }
 });
 
-// Get all call logs
-app.get("/api/call-logs", (req, res) => {
-  db.all(
-    "SELECT id, contact_name, contact_phone, contact_avatar, type, timestamp, duration FROM call_logs ORDER BY timestamp DESC",
-    [],
-    (err, rows) => {
-      if (err) {
-        console.error(err);
-        return sendError(res, 500, "Database error.");
+// Get call logs for the current user (JWT protected)
+app.get("/api/call-logs", authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    db.all(
+      `SELECT id, caller_id, callee_id, channel, call_type, direction, status, started_at, ended_at, duration
+       FROM call_logs
+       WHERE caller_id = ? OR callee_id = ?
+       ORDER BY started_at DESC`,
+      [userId, userId],
+      (err, rows) => {
+        if (err) {
+          console.error(err);
+          return sendError(res, 500, "Database error.");
+        }
+        res.json(Array.isArray(rows) ? rows : []);
       }
-      res.json(
-        Array.isArray(rows)
-          ? rows.map((row) => ({
-              ...row,
-            }))
-          : []
-      );
-    }
-  );
+    );
+  } catch (err) {
+    console.error(err);
+    return sendError(res, 500, "Database error.");
+  }
 });
 
 // Delete pending registration by verification code

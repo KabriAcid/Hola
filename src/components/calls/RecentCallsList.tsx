@@ -28,24 +28,29 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
   React.useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch("/api/call-logs")
+    const token = localStorage.getItem("jwt");
+    fetch("/api/call-logs", {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch call logs");
         return res.json();
       })
       .then((data) => {
-        // Map backend snake_case to frontend camelCase
+        // Map backend fields to frontend camelCase if needed
         const mapped = data.map((item: any) => ({
           id: String(item.id),
-          contactId: item.contact_id
-            ? String(item.contact_id)
-            : String(item.id),
-          contactName: item.contact_name,
-          contactPhone: item.contact_phone,
-          contactAvatar: item.contact_avatar,
-          type: item.type,
+          callerId: item.caller_id,
+          calleeId: item.callee_id,
+          channel: item.channel,
+          callType: item.call_type,
+          direction: item.direction,
+          status: item.status,
+          startedAt: item.started_at,
+          endedAt: item.ended_at,
           duration: item.duration,
-          timestamp: item.timestamp,
         }));
         setCallLogs(mapped);
         setLoading(false);
@@ -114,9 +119,17 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 No recent calls
               </h3>
-              <p className="text-gray-600">
-                Your call history will appear here
+              <p className="text-gray-600 mb-4">
+                You have no call history yet. Add your first contact to start
+                calling!
               </p>
+              <a
+                href="/app/contacts"
+                className="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium"
+                style={{ textDecoration: "none" }}
+              >
+                Add your first contact
+              </a>
             </div>
           </div>
         ) : (
