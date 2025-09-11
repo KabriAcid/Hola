@@ -1,5 +1,5 @@
-// (Route will be re-added below)
 const express = require("express");
+const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
 const { body, validationResult } = require("express-validator");
 const xss = require("xss");
@@ -12,8 +12,18 @@ const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const cors = require("cors");
-const dotenv = require("dotenv").config();
+// Load environment variables from root .env (one level up) so starting the server
+// from within the /server directory (nodemon .) still picks them up.
+// This avoids the 500 "Agora credentials not set" error when process.cwd() !== project root.
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 const PORT = process.env.PORT || 5000;
+
+// Early diagnostics (do NOT print secret values, only presence flags)
+console.log("[BOOT] Env presence:", {
+  AGORA_APP_ID: !!process.env.AGORA_APP_ID,
+  AGORA_APP_CERTIFICATE: !!process.env.AGORA_APP_CERTIFICATE,
+  JWT_SECRET: !!process.env.JWT_SECRET,
+});
 
 // Allow CORS for frontend (adjust origin as needed)
 app.use(cors({ origin: "*" }));
@@ -21,7 +31,7 @@ app.use(cors({ origin: "*" }));
 // Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: "*", // Change to your frontend URL in production
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });
@@ -323,40 +333,49 @@ app.get("/api/me", authenticateJWT, async (req, res) => {
 
 // --- AGORA TOKEN GENERATION ENDPOINT ---
 app.get("/api/agora-token", (req, res) => {
-  const appID = process.env.AGORA_APP_ID;
-  const appCertificate = process.env.AGORA_APP_CERTIFICATE;
-  const channelName = req.query.channel;
-  const uid = req.query.uid || 0;
-  const role = RtcRole.PUBLISHER;
-  const expireTime = 3600; // 1 hour
+  try {
+    const appID = process.env.AGORA_APP_ID;
+    const appCertificate = process.env.AGORA_APP_CERTIFICATE;
+    const channelName = req.query.channel;
+    const uidParam = req.query.uid;
+    const role = RtcRole.PUBLISHER;
+    const expireTime = 3600; // 1 hour
 
-  // Defensive check
-  if (!appID || !appCertificate) {
-    console.error("Missing AGORA_APP_ID or AGORA_APP_CERTIFICATE", {
+    if (!appID || !appCertificate) {
+      console.error("[AGORA] Missing credentials (ID / CERT)");
+      return res
+        .status(500)
+        .json({ error: "Agora credentials not set in backend environment" });
+    }
+    if (!channelName) {
+      return res.status(400).json({ error: "channel is required" });
+    }
+
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+    const privilegeExpireTime = currentTimestamp + expireTime;
+
+    // Detailed logging for debugging
+    // Always use buildTokenWithAccount for phone numbers (preserve leading zeros)
+    const account = uidParam || "0";
+    const token = RtcTokenBuilder.buildTokenWithAccount(
       appID,
       appCertificate,
+      channelName,
+      account,
+      role,
+      privilegeExpireTime
+    );
+    console.log("[AGORA] Token generated:", {
+      method: "buildTokenWithAccount",
+      channel: channelName,
+      uid: account,
+      uidType: typeof account,
     });
-    return res
-      .status(500)
-      .json({ error: "Agora credentials not set in backend environment" });
+    return res.json({ token });
+  } catch (err) {
+    console.error("[AGORA] Token generation failed", err);
+    return res.status(500).json({ error: "Failed to generate token" });
   }
-  if (!channelName) {
-    return res.status(400).json({ error: "channel is required" });
-  }
-
-  const currentTimestamp = Math.floor(Date.now() / 1000);
-  const privilegeExpireTime = currentTimestamp + expireTime;
-
-  const token = RtcTokenBuilder.buildTokenWithUid(
-    appID,
-    appCertificate,
-    channelName,
-    uid,
-    role,
-    privilegeExpireTime
-  );
-
-  res.json({ token });
 });
 
 // Get user by username (future route)
@@ -370,10 +389,18 @@ app.get("/api/user/:username", async (req, res) => {
     if (!user) return sendError(res, 404, "User not found");
     res.json(userToResponse(user));
   } catch (err) {
-    w;
     console.error(err);
     return sendError(res, 500, "Database error");
   }
+});
+
+// Simple env health endpoint (never returns actual secrets)
+app.get("/api/env-health", (req, res) => {
+  res.json({
+    AGORA_APP_ID: !!process.env.AGORA_APP_ID,
+    AGORA_APP_CERTIFICATE: !!process.env.AGORA_APP_CERTIFICATE,
+    JWT_SECRET: !!process.env.JWT_SECRET,
+  });
 });
 
 // Get contacts for the current user (JWT protected)
