@@ -155,6 +155,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({
         <Input
           label="Phone Number"
           type="tel"
+          name="phone_number"
           maxLength={11}
           placeholder="08012345678 or +2348012345678"
           value={formData.phone}

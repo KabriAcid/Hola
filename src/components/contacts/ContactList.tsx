@@ -25,7 +25,8 @@ export const ContactList: React.FC<ContactListProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  // Add Contact handler
+  const [editContact, setEditContact] = useState<Contact | null>(null);
+  // Add or Edit Contact handler
   const handleAddContact = async (
     contact: Omit<Contact, "id"> & { avatarFile?: File | null }
   ) => {
@@ -36,23 +37,33 @@ export const ContactList: React.FC<ContactListProps> = ({
       formData.append("phone", contact.phone);
       formData.append("email", contact.email || "");
       formData.append("isFavorite", contact.isFavorite ? "1" : "0");
-      // If avatarFile is present, append as file, else append avatar string
       if ((contact as any).avatarFile) {
         formData.append("avatar", (contact as any).avatarFile);
       } else if (contact.avatar) {
         formData.append("avatar", contact.avatar);
       }
-      const res = await fetch("/api/contacts", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
-        },
-        body: formData,
-      });
-      if (!res.ok) throw new Error("Failed to add contact");
-      const newContact = await res.json();
-      setContacts((prev) => [...prev, newContact]);
+      let newContact;
+      if (editContact) {
+        // TODO: Implement PUT /api/contacts/:id for editing
+        // For now, just close modal
+        setEditContact(null);
+        setShowAddModal(false);
+        setIsSaving(false);
+        return;
+      } else {
+        const res = await fetch("/api/contacts", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
+          },
+          body: formData,
+        });
+        if (!res.ok) throw new Error("Failed to add contact");
+        newContact = await res.json();
+        setContacts((prev) => [...prev, newContact]);
+      }
       setShowAddModal(false);
+      setEditContact(null);
     } catch (err) {
       setError((err as Error).message || "Error adding contact");
     } finally {
@@ -96,7 +107,8 @@ export const ContactList: React.FC<ContactListProps> = ({
     onToggleFavorite(contactId);
   };
   const handleEdit = (contact: Contact) => {
-    onEdit(contact);
+    setEditContact(contact);
+    setShowAddModal(true);
   };
 
   const favorites = contacts.filter((c) => c.isFavorite);
@@ -147,37 +159,33 @@ export const ContactList: React.FC<ContactListProps> = ({
           <Phone className="w-5 h-5 text-green-600" />
         </motion.button>
 
-        <div className="relative group">
-          <motion.button
-            className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-            whileTap={{ scale: 0.95 }}
-          >
-            <Edit className="w-4 h-4 text-gray-600" />
-          </motion.button>
+        <motion.button
+          onClick={() => handleEdit(contact)}
+          className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+          whileTap={{ scale: 0.95 }}
+        >
+          <Edit className="w-4 h-4 text-gray-600" />
+        </motion.button>
 
-          <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-            <button
-              onClick={() => onEdit(contact)}
-              className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
-            >
-              Edit Contact
-            </button>
-            <button
-              onClick={() => onToggleFavorite(contact.id)}
-              className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
-            >
-              {contact.isFavorite
-                ? "Remove from Favorites"
-                : "Add to Favorites"}
-            </button>
-            <button
-              onClick={() => onDelete(contact.id)}
-              className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-            >
-              Delete Contact
-            </button>
-          </div>
-        </div>
+        <motion.button
+          onClick={() => onToggleFavorite(contact.id)}
+          className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+          whileTap={{ scale: 0.95 }}
+        >
+          {contact.isFavorite ? (
+            <Star className="w-4 h-4 text-yellow-500 fill-current" />
+          ) : (
+            <Star className="w-4 h-4 text-gray-400" />
+          )}
+        </motion.button>
+
+        <motion.button
+          onClick={() => onDelete(contact.id)}
+          className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+          whileTap={{ scale: 0.95 }}
+        >
+          <Trash2 className="w-4 h-4 text-red-600" />
+        </motion.button>
       </div>
     </motion.div>
   );
@@ -240,11 +248,15 @@ export const ContactList: React.FC<ContactListProps> = ({
             </div>
           )}
 
-          {/* Add Contact Modal */}
+          {/* Add/Edit Contact Modal */}
           <ContactForm
             isOpen={showAddModal}
+            contact={editContact || undefined}
             onSave={handleAddContact}
-            onClose={() => setShowAddModal(false)}
+            onClose={() => {
+              setShowAddModal(false);
+              setEditContact(null);
+            }}
             isLoading={isSaving}
           />
         </>

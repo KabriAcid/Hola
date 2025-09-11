@@ -353,6 +353,11 @@ function authenticateJWT(req, res, next) {
   });
 }
 
+// Helper to capitalize first letter of each word
+function capitalizeWords(str) {
+  return str.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // Get current user (JWT protected)
 app.get("/api/me", authenticateJWT, async (req, res) => {
   try {
@@ -460,10 +465,71 @@ app.get("/api/contacts", authenticateJWT, async (req, res) => {
   }
 });
 
-// Helper to capitalize first letter of each word
-function capitalizeWords(str) {
-  return str.replace(/\b\w/g, (c) => c.toUpperCase());
-}
+// Update an existing contact for the current user (JWT protected, supports avatar upload)
+app.put(
+  "/api/contacts/:id",
+  authenticateJWT,
+  upload.single("avatar"),
+  asyncHandler(async (req, res) => {
+    const contactId = req.params.id;
+    // Accept fields from form-data or JSON
+    const { name, phone, email, isFavorite } = req.body;
+    // Fetch existing contact
+    const existing = await dbGet(
+      `SELECT * FROM contacts WHERE id = ? AND owner_id = ?`,
+      [contactId, req.user.id]
+    );
+    if (!existing) return sendError(res, 404, "Contact not found");
+    // Prepare updated fields
+    let safeName = existing.name;
+    if (name) safeName = xss(capitalizeWords(name.trim()));
+    let safePhone = existing.phone;
+    if (phone) {
+      let rawPhone = phone.trim();
+      if (rawPhone.startsWith("+234")) {
+        rawPhone = "0" + rawPhone.slice(4);
+      }
+      rawPhone = rawPhone.replace(/\D/g, "");
+      if (!/^0(70|80|81|90)\d{8}$/.test(rawPhone)) {
+        return sendError(
+          res,
+          400,
+          "Phone number must start with 080, 081, 070, or 090 and be 11 digits"
+        );
+      }
+      safePhone = xss(rawPhone);
+    }
+    let safeAvatar = existing.avatar;
+    if (req.file && req.file.filename) {
+      safeAvatar = req.file.filename;
+    } else if (req.body.avatar && req.body.avatar.trim()) {
+      safeAvatar = xss(req.body.avatar.trim());
+    }
+    let safeEmail = existing.email;
+    if (email !== undefined) safeEmail = email ? xss(email.trim()) : null;
+    let safeIsFavorite =
+      typeof isFavorite !== "undefined"
+        ? isFavorite === "1" || isFavorite === 1 || isFavorite === true
+        : existing.is_favorite;
+    // Update contact
+    const updateSql = `UPDATE contacts SET name = ?, phone = ?, avatar = ?, email = ?, is_favorite = ?, updated_at = datetime('now') WHERE id = ? AND owner_id = ?`;
+    await dbRun(updateSql, [
+      safeName,
+      safePhone,
+      safeAvatar,
+      safeEmail,
+      safeIsFavorite ? 1 : 0,
+      contactId,
+      req.user.id,
+    ]);
+    // Return the updated contact
+    const updated = await dbGet(
+      `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, created_at, updated_at FROM contacts WHERE id = ?`,
+      [contactId]
+    );
+    res.json(updated);
+  })
+);
 
 // Add a new contact for the current user (JWT protected, supports avatar upload)
 app.post(
