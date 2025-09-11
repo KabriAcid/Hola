@@ -68,16 +68,6 @@ export const ContactList: React.FC<ContactListProps> = ({
   }) => {
     const itemEllipsisRef = useRef<HTMLButtonElement | null>(null);
 
-    useEffect(() => {
-      if (dropdownOpen === contact.id && itemEllipsisRef.current) {
-        const rect = itemEllipsisRef.current.getBoundingClientRect();
-        setDropdownPos({
-          top: rect.bottom + window.scrollY + 4,
-          left: rect.right - 160,
-        });
-      }
-    }, [dropdownOpen, contact.id]);
-
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -127,6 +117,13 @@ export const ContactList: React.FC<ContactListProps> = ({
               if (dropdownOpen === contact.id) {
                 setDropdownOpen(null);
               } else {
+                if (itemEllipsisRef.current) {
+                  const rect = itemEllipsisRef.current.getBoundingClientRect();
+                  setDropdownPos({
+                    top: rect.bottom + window.scrollY + 4,
+                    left: rect.right - 160,
+                  });
+                }
                 setDropdownOpen(contact.id);
               }
             }}
@@ -138,49 +135,65 @@ export const ContactList: React.FC<ContactListProps> = ({
           {dropdownOpen === contact.id &&
             dropdownPos &&
             ReactDOM.createPortal(
-              <div
-                style={{
-                  position: "absolute",
-                  top: dropdownPos.top,
-                  left: dropdownPos.left,
-                  zIndex: 9999,
-                  minWidth: 160,
-                }}
-                className="bg-white border border-gray-200 rounded-lg shadow-lg min-w-[140px] py-2 flex flex-col"
-              >
-                <button
-                  className="flex items-center px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
-                  onClick={() => {
-                    setDropdownOpen(null);
-                    handleEdit(contact);
+              <>
+                {/* Transparent overlay to catch outside clicks */}
+                <div
+                  style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: "100vw",
+                    height: "100vh",
+                    zIndex: 9998,
+                    background: "transparent",
                   }}
-                >
-                  <Edit className="w-4 h-4 mr-2 text-gray-600" /> Edit
-                </button>
-                <button
-                  className="flex items-center px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
-                  onClick={() => {
-                    setDropdownOpen(null);
-                    onToggleFavorite(contact.id);
+                  onClick={() => setDropdownOpen(null)}
+                />
+                {/* Actual dropdown menu */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: dropdownPos.top,
+                    left: dropdownPos.left,
+                    zIndex: 9999,
+                    minWidth: 160,
                   }}
+                  className="bg-white border border-gray-200 rounded-lg shadow-lg min-w-[140px] py-2 flex flex-col"
                 >
-                  {contact.isFavorite ? (
-                    <Star className="w-4 h-4 mr-2 text-yellow-500 fill-current" />
-                  ) : (
-                    <Star className="w-4 h-4 mr-2 text-gray-400" />
-                  )}
-                  {contact.isFavorite ? "Unfavorite" : "Favorite"}
-                </button>
-                <button
-                  className="flex items-center px-4 py-2 hover:bg-gray-100 text-sm text-red-600"
-                  onClick={() => {
-                    setDropdownOpen(null);
-                    handleDelete(contact.id);
-                  }}
-                >
-                  <Trash2 className="w-4 h-4 mr-2 text-red-600" /> Delete
-                </button>
-              </div>,
+                  <button
+                    className="flex items-center px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
+                    onClick={() => {
+                      setDropdownOpen(null);
+                      handleEdit(contact);
+                    }}
+                  >
+                    <Edit className="w-4 h-4 mr-2 text-gray-600" /> Edit
+                  </button>
+                  <button
+                    className="flex items-center px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
+                    onClick={() => {
+                      setDropdownOpen(null);
+                      onToggleFavorite(contact.id);
+                    }}
+                  >
+                    {contact.isFavorite ? (
+                      <Star className="w-4 h-4 mr-2 text-yellow-500 fill-current" />
+                    ) : (
+                      <Star className="w-4 h-4 mr-2 text-gray-400" />
+                    )}
+                    {contact.isFavorite ? "Unfavorite" : "Favorite"}
+                  </button>
+                  <button
+                    className="flex items-center px-4 py-2 hover:bg-gray-100 text-sm text-red-600"
+                    onClick={() => {
+                      setDropdownOpen(null);
+                      handleDelete(contact.id);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2 text-red-600" /> Delete
+                  </button>
+                </div>
+              </>,
               document.body
             )}
         </div>
