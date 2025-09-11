@@ -431,7 +431,7 @@ app.get("/api/contacts", authenticateJWT, async (req, res) => {
   try {
     const rows = await new Promise((resolve, reject) => {
       db.all(
-        `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, label, notes, created_at, updated_at FROM contacts WHERE owner_id = ? ORDER BY name COLLATE NOCASE`,
+        `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, created_at, updated_at FROM contacts WHERE owner_id = ? ORDER BY name COLLATE NOCASE`,
         [req.user.id],
         (err, rows) => {
           if (err) reject(err);
@@ -445,6 +445,40 @@ app.get("/api/contacts", authenticateJWT, async (req, res) => {
     return sendError(res, 500, "Database error");
   }
 });
+
+// Add a new contact for the current user (JWT protected)
+app.post(
+  "/api/contacts",
+  authenticateJWT,
+  asyncHandler(async (req, res) => {
+    const { name, phone, avatar, email, isFavorite, isOnline } = req.body;
+    // Validate required fields
+    if (!name || !phone) {
+      return sendError(res, 400, "Name and phone are required");
+    }
+    // Sanitize input
+    const safeName = xss(name.capitalize().trim());
+    const safePhone = xss(phone.trim());
+    const safeAvatar = xss(avatar && avatar.trim() ? avatar : "default.png");
+    const safeEmail = email ? xss(email.trim()) : null;
+    // Insert contact
+    const insertSql = `INSERT INTO contacts (owner_id, name, phone, avatar, email, is_favorite, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`;
+    const result = await dbRun(insertSql, [
+      req.user.id,
+      safeName,
+      safePhone,
+      safeAvatar,
+      safeEmail,
+      isFavorite ? 1 : 0,
+    ]);
+    // Return the created contact
+    const contact = await dbGet(
+      `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, created_at, updated_at FROM contacts WHERE id = ?`,
+      [result.lastID]
+    );
+    res.status(201).json(contact);
+  })
+);
 
 // Get call logs for the current user (JWT protected)
 app.get("/api/call-logs", authenticateJWT, async (req, res) => {

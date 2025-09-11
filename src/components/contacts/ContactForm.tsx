@@ -29,6 +29,9 @@ export const ContactForm: React.FC<ContactFormProps> = ({
     email: contact?.email || "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Nigerian phone number regex (same as registration backend: isMobilePhone('en-NG'))
+  const nigerianPhoneRegex = /^(\+234|0)[789][01]\d{8}$/;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateForm = () => {
@@ -40,12 +43,33 @@ export const ContactForm: React.FC<ContactFormProps> = ({
 
     if (!formData.phone.trim()) {
       newErrors.phone = "Phone number is required";
-    } else if (!/^\+?[\d\s-()]+$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid phone number";
+    } else if (!nigerianPhoneRegex.test(formData.phone.trim())) {
+      newErrors.phone =
+        "Enter a valid Nigerian phone number (e.g. 08012345678 or +2348012345678)";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // Real-time phone validation
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData({ ...formData, phone: value });
+    if (!value.trim()) {
+      setErrors((prev) => ({ ...prev, phone: "Phone number is required" }));
+    } else if (!nigerianPhoneRegex.test(value.trim())) {
+      setErrors((prev) => ({
+        ...prev,
+        phone:
+          "Enter a valid Nigerian phone number (e.g. 08012345678 or +2348012345678)",
+      }));
+    } else {
+      setErrors((prev) => {
+        const { phone, ...rest } = prev;
+        return rest;
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,9 +155,9 @@ export const ContactForm: React.FC<ContactFormProps> = ({
         <Input
           label="Phone Number"
           type="tel"
-          placeholder="+1 234 567 8900"
+          placeholder="08012345678 or +2348012345678"
           value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          onChange={handlePhoneChange}
           error={errors.phone}
           icon={<Phone className="w-5 h-5" />}
         />
