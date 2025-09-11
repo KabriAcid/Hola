@@ -28,6 +28,16 @@ export const ContactForm: React.FC<ContactFormProps> = ({
     avatar: contact?.avatar || "",
     email: contact?.email || "",
   });
+
+  // Reset form when contact prop changes (for edit mode)
+  React.useEffect(() => {
+    setFormData({
+      name: contact?.name || "",
+      phone: contact?.phone || "",
+      avatar: contact?.avatar || "",
+      email: contact?.email || "",
+    });
+  }, [contact, isOpen]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Nigerian phone number regex (same as registration backend: isMobilePhone('en-NG'))

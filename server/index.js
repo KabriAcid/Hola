@@ -531,16 +531,39 @@ app.put(
   })
 );
 
+// Delete a contact for the current user (JWT protected)
+app.delete(
+  "/api/contacts/:id",
+  authenticateJWT,
+  asyncHandler(async (req, res) => {
+    const contactId = req.params.id;
+    // Only allow deleting own contact
+    const existing = await dbGet(
+      `SELECT id FROM contacts WHERE id = ? AND owner_id = ?`,
+      [contactId, req.user.id]
+    );
+    if (!existing) return sendError(res, 404, "Contact not found");
+    await dbRun(`DELETE FROM contacts WHERE id = ? AND owner_id = ?`, [
+      contactId,
+      req.user.id,
+    ]);
+    res.json({ success: true });
+  })
+);
+
 // Add a new contact for the current user (JWT protected, supports avatar upload)
 app.post(
   "/api/contacts",
   authenticateJWT,
   upload.single("avatar"),
   asyncHandler(async (req, res) => {
+    console.log("[POST /api/contacts] Body:", req.body);
+    if (req.file) console.log("[POST /api/contacts] File:", req.file.filename);
     // Accept fields from form-data or JSON
     const { name, phone, email, isFavorite, isOnline } = req.body;
     // Validate required fields
     if (!name || !phone) {
+      console.error("[POST /api/contacts] Missing name or phone");
       return sendError(res, 400, "Name and phone are required");
     }
     // Sanitize input
@@ -552,6 +575,7 @@ app.post(
     }
     rawPhone = rawPhone.replace(/\D/g, "");
     if (!/^0(70|80|81|90)\d{8}$/.test(rawPhone)) {
+      console.error("[POST /api/contacts] Invalid phone format:", rawPhone);
       return sendError(
         res,
         400,
@@ -569,20 +593,26 @@ app.post(
     const safeEmail = email ? xss(email.trim()) : null;
     // Insert contact
     const insertSql = `INSERT INTO contacts (owner_id, name, phone, avatar, email, is_favorite, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`;
-    const result = await dbRun(insertSql, [
-      req.user.id,
-      safeName,
-      safePhone,
-      safeAvatar,
-      safeEmail,
-      isFavorite ? 1 : 0,
-    ]);
-    // Return the created contact
-    const contact = await dbGet(
-      `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, created_at, updated_at FROM contacts WHERE id = ?`,
-      [result.lastID]
-    );
-    res.status(201).json(contact);
+    try {
+      const result = await dbRun(insertSql, [
+        req.user.id,
+        safeName,
+        safePhone,
+        safeAvatar,
+        safeEmail,
+        isFavorite ? 1 : 0,
+      ]);
+      console.log("[POST /api/contacts] Inserted contact ID:", result.lastID);
+      // Return the created contact
+      const contact = await dbGet(
+        `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, created_at, updated_at FROM contacts WHERE id = ?`,
+        [result.lastID]
+      );
+      res.status(201).json(contact);
+    } catch (err) {
+      console.error("[POST /api/contacts] DB Error:", err);
+      return sendError(res, 500, "Database error");
+    }
   })
 );
 
