@@ -26,16 +26,28 @@ export const ContactList: React.FC<ContactListProps> = ({
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   // Add Contact handler
-  const handleAddContact = async (contact: Omit<Contact, "id">) => {
+  const handleAddContact = async (
+    contact: Omit<Contact, "id"> & { avatarFile?: File | null }
+  ) => {
     setIsSaving(true);
     try {
+      const formData = new FormData();
+      formData.append("name", contact.name);
+      formData.append("phone", contact.phone);
+      formData.append("email", contact.email || "");
+      formData.append("isFavorite", contact.isFavorite ? "1" : "0");
+      // If avatarFile is present, append as file, else append avatar string
+      if ((contact as any).avatarFile) {
+        formData.append("avatar", (contact as any).avatarFile);
+      } else if (contact.avatar) {
+        formData.append("avatar", contact.avatar);
+      }
       const res = await fetch("/api/contacts", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
         },
-        body: JSON.stringify(contact),
+        body: formData,
       });
       if (!res.ok) throw new Error("Failed to add contact");
       const newContact = await res.json();

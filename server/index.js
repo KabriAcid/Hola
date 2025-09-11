@@ -3,7 +3,7 @@ const multer = require("multer");
 // Multer setup for avatar uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "../public/assets/imgs"));
+    cb(null, path.join(__dirname, "../public/assets/avatars"));
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);
@@ -460,6 +460,11 @@ app.get("/api/contacts", authenticateJWT, async (req, res) => {
   }
 });
 
+// Helper to capitalize first letter of each word
+function capitalizeWords(str) {
+  return str.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // Add a new contact for the current user (JWT protected, supports avatar upload)
 app.post(
   "/api/contacts",
@@ -473,7 +478,7 @@ app.post(
       return sendError(res, 400, "Name and phone are required");
     }
     // Sanitize input
-    const safeName = xss((name || "").capitalize().trim());
+    const safeName = xss(capitalizeWords((name || "").trim()));
     let rawPhone = (phone || "").trim();
     // Convert +2348... to 08... and remove non-digits
     if (rawPhone.startsWith("+234")) {
