@@ -319,13 +319,28 @@ export const ContactList: React.FC<ContactListProps> = ({
                   console.log("[EditContact] Response status:", res.status);
                   if (!res.ok) throw new Error("Failed to update contact");
                   const updatedContact = await res.json();
-                  setContacts((prev) =>
-                    prev.map((c) =>
+                  setContacts((prev) => {
+                    const updated = prev.map((c) =>
                       c.id === editContact.id ? updatedContact : c
-                    )
+                    );
+                    console.log(
+                      "[EditContact] Updated contacts state:",
+                      updated
+                    );
+                    return updated;
+                  });
+                  console.log(
+                    "[EditContact] Updated contact from backend:",
+                    updatedContact
                   );
                 } else {
                   console.log("[AddContact] Submitting contact:", contact);
+                  formData.forEach((value, key) => {
+                    console.log(`[AddContact] FormData: ${key} =`, value);
+                  });
+                  console.log(
+                    "[AddContact] About to submit fetch POST /api/contacts with FormData:"
+                  );
                   formData.forEach((value, key) => {
                     console.log(`[AddContact] FormData: ${key} =`, value);
                   });
@@ -341,7 +356,18 @@ export const ContactList: React.FC<ContactListProps> = ({
                   console.log("[AddContact] Response status:", res.status);
                   if (!res.ok) throw new Error("Failed to add contact");
                   const newContact = await res.json();
-                  setContacts((prev) => [...prev, newContact]);
+                  setContacts((prev) => {
+                    const updated = [...prev, newContact];
+                    console.log(
+                      "[AddContact] Updated contacts state:",
+                      updated
+                    );
+                    return updated;
+                  });
+                  console.log(
+                    "[AddContact] New contact from backend:",
+                    newContact
+                  );
                 }
                 setShowAddModal(false);
                 setEditContact(null);

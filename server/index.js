@@ -1,18 +1,4 @@
 const express = require("express");
-const multer = require("multer");
-// Multer setup for avatar uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "../public/assets/avatars"));
-  },
-  filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname);
-    const base = path.basename(file.originalname, ext);
-    const unique = base + "-" + Date.now() + ext;
-    cb(null, unique);
-  },
-});
-const upload = multer({ storage });
 const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
 const { body, validationResult } = require("express-validator");
@@ -26,6 +12,38 @@ const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const cors = require("cors");
+const multer = require("multer");
+// Multer setup for avatar uploads
+const fs = require("fs");
+const AVATAR_DIR = path.join(__dirname, "../public/assets/avatars");
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Ensure the avatars directory exists
+    if (!fs.existsSync(AVATAR_DIR)) {
+      try {
+        fs.mkdirSync(AVATAR_DIR, { recursive: true });
+        console.log("[MULTER] Created avatars directory:", AVATAR_DIR);
+      } catch (err) {
+        console.error(
+          "[MULTER] Failed to create avatars directory:",
+          AVATAR_DIR,
+          err
+        );
+        return cb(err);
+      }
+    }
+    console.log("[MULTER] Using avatars directory:", AVATAR_DIR);
+    cb(null, AVATAR_DIR);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    // Generate a short random 8-character hex string
+    const short = Math.random().toString(16).slice(2, 10);
+    const unique = short + ext;
+    cb(null, unique);
+  },
+});
+const upload = multer({ storage });
 // Load environment variables from root .env (one level up) so starting the server
 // from within the /server directory (nodemon .) still picks them up.
 // This avoids the 500 "Agora credentials not set" error when process.cwd() !== project root.
@@ -557,8 +575,9 @@ app.post(
   authenticateJWT,
   upload.single("avatar"),
   asyncHandler(async (req, res) => {
-    console.log("[POST /api/contacts] Body:", req.body);
-    if (req.file) console.log("[POST /api/contacts] File:", req.file.filename);
+    console.error("[POST /api/contacts] Body:", req.body);
+    if (req.file)
+      console.error("[POST /api/contacts] File:", req.file.filename);
     // Accept fields from form-data or JSON
     const { name, phone, email, isFavorite, isOnline } = req.body;
     // Validate required fields
@@ -602,12 +621,13 @@ app.post(
         safeEmail,
         isFavorite ? 1 : 0,
       ]);
-      console.log("[POST /api/contacts] Inserted contact ID:", result.lastID);
+      console.error("[POST /api/contacts] Inserted contact ID:", result.lastID);
       // Return the created contact
       const contact = await dbGet(
         `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, created_at, updated_at FROM contacts WHERE id = ?`,
         [result.lastID]
       );
+      console.error("[POST /api/contacts] Returning contact:", contact);
       res.status(201).json(contact);
     } catch (err) {
       console.error("[POST /api/contacts] DB Error:", err);

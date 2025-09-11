@@ -2,6 +2,9 @@ import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { User, Phone, Camera } from "lucide-react";
 import { Contact } from "../../types";
+
+// Extend Contact for form submission to allow avatarFile
+type ContactFormData = Omit<Contact, "id"> & { avatarFile?: File };
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Modal } from "../ui/Modal";
@@ -10,7 +13,7 @@ import { Avatar } from "../ui/Avatar";
 interface ContactFormProps {
   isOpen: boolean;
   contact?: Contact;
-  onSave: (contact: Omit<Contact, "id">) => Promise<void>;
+  onSave: (contact: ContactFormData) => Promise<void>;
   onClose: () => void;
   isLoading: boolean;
 }
@@ -22,11 +25,18 @@ export const ContactForm: React.FC<ContactFormProps> = ({
   onClose,
   isLoading,
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    phone: string;
+    avatar: string;
+    email: string;
+    avatarFile?: File;
+  }>({
     name: contact?.name || "",
     phone: contact?.phone || "",
     avatar: contact?.avatar || "",
     email: contact?.email || "",
+    avatarFile: undefined,
   });
 
   // Reset form when contact prop changes (for edit mode)
@@ -36,6 +46,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({
       phone: contact?.phone || "",
       avatar: contact?.avatar || "",
       email: contact?.email || "",
+      avatarFile: undefined,
     });
   }, [contact, isOpen]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -95,6 +106,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({
         name: formData.name.trim(),
         phone: formData.phone.trim(),
         avatar: avatarValue,
+        avatarFile: formData.avatarFile,
         email: formData.email.trim(),
         isFavorite: contact?.isFavorite || false,
         isOnline: contact?.isOnline || false,
@@ -117,9 +129,11 @@ export const ContactForm: React.FC<ContactFormProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setFormData((prev) => ({ ...prev, avatarFile: file }));
+      // Optionally, show a preview using base64 for the Avatar component
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setFormData({ ...formData, avatar: e.target?.result as string });
+      reader.onload = (ev) => {
+        setFormData((prev) => ({ ...prev, avatar: ev.target?.result as string }));
       };
       reader.readAsDataURL(file);
     }
@@ -200,17 +214,17 @@ export const ContactForm: React.FC<ContactFormProps> = ({
           </motion.p>
         )}
 
-        <div className="flex space-x-3 pt-4">
+        <div className="flex justify-between space-x-2 pt-4">
           <Button
             type="button"
             variant="secondary"
             onClick={onClose}
-            className="flex-1"
+            className="hover:border-gray-400 hover:bg-gray-300"
           >
             Cancel
           </Button>
-          <Button type="submit" className="flex-1" isLoading={isLoading}>
-            {contact ? "Update" : "Add"} Contact
+          <Button type="submit" className="w-full" isLoading={isLoading}>
+            {contact ? "Update" : "Save"}
           </Button>
         </div>
       </form>
