@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Phone, MessageCircle, Star, Edit, Trash2 } from "lucide-react";
 import { Contact } from "../../types";
 import { Avatar } from "../ui/Avatar";
+import { ContactForm } from "./ContactForm";
 
 interface ContactListProps {
   onCall: (contact: Contact) => void;
@@ -23,6 +24,29 @@ export const ContactList: React.FC<ContactListProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  // Add Contact handler
+  const handleAddContact = async (contact: Omit<Contact, "id">) => {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/contacts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
+        },
+        body: JSON.stringify(contact),
+      });
+      if (!res.ok) throw new Error("Failed to add contact");
+      const newContact = await res.json();
+      setContacts((prev) => [...prev, newContact]);
+      setShowAddModal(false);
+    } catch (err) {
+      setError((err as Error).message || "Error adding contact");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -205,8 +229,12 @@ export const ContactList: React.FC<ContactListProps> = ({
           )}
 
           {/* Add Contact Modal */}
-          {/* You may need to import ContactForm and pass the right props here */}
-          {/* <ContactForm isOpen={showAddModal} onSave={...} onClose={() => setShowAddModal(false)} ... /> */}
+          <ContactForm
+            isOpen={showAddModal}
+            onSave={handleAddContact}
+            onClose={() => setShowAddModal(false)}
+            isLoading={isSaving}
+          />
         </>
       )}
     </div>

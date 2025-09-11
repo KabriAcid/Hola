@@ -54,7 +54,9 @@ export const ContactForm: React.FC<ContactFormProps> = ({
 
     try {
       // If avatar is empty, use the default avatar filename
-      const avatarValue = formData.avatar?.trim() ? formData.avatar : "default.png";
+      const avatarValue = formData.avatar?.trim()
+        ? formData.avatar
+        : "default.png";
       await onSave({
         name: formData.name.trim(),
         phone: formData.phone.trim(),
