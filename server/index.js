@@ -1,4 +1,18 @@
 const express = require("express");
+const multer = require("multer");
+// Multer setup for avatar uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, "../public/assets/imgs"));
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const base = path.basename(file.originalname, ext);
+    const unique = base + "-" + Date.now() + ext;
+    cb(null, unique);
+  },
+});
+const upload = multer({ storage });
 const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
 const { body, validationResult } = require("express-validator");
@@ -446,20 +460,41 @@ app.get("/api/contacts", authenticateJWT, async (req, res) => {
   }
 });
 
-// Add a new contact for the current user (JWT protected)
+// Add a new contact for the current user (JWT protected, supports avatar upload)
 app.post(
   "/api/contacts",
   authenticateJWT,
+  upload.single("avatar"),
   asyncHandler(async (req, res) => {
-    const { name, phone, avatar, email, isFavorite, isOnline } = req.body;
+    // Accept fields from form-data or JSON
+    const { name, phone, email, isFavorite, isOnline } = req.body;
     // Validate required fields
     if (!name || !phone) {
       return sendError(res, 400, "Name and phone are required");
     }
     // Sanitize input
-    const safeName = xss(name.capitalize().trim());
-    const safePhone = xss(phone.trim());
-    const safeAvatar = xss(avatar && avatar.trim() ? avatar : "default.png");
+    const safeName = xss((name || "").capitalize().trim());
+    let rawPhone = (phone || "").trim();
+    // Convert +2348... to 08... and remove non-digits
+    if (rawPhone.startsWith("+234")) {
+      rawPhone = "0" + rawPhone.slice(4);
+    }
+    rawPhone = rawPhone.replace(/\D/g, "");
+    if (!/^0(70|80|81|90)\d{8}$/.test(rawPhone)) {
+      return sendError(
+        res,
+        400,
+        "Phone number must start with 080, 081, 070, or 090 and be 11 digits"
+      );
+    }
+    const safePhone = xss(rawPhone);
+    // Handle avatar: if file uploaded, use filename; else use string or default
+    let safeAvatar = "default.png";
+    if (req.file && req.file.filename) {
+      safeAvatar = req.file.filename;
+    } else if (req.body.avatar && req.body.avatar.trim()) {
+      safeAvatar = xss(req.body.avatar.trim());
+    }
     const safeEmail = email ? xss(email.trim()) : null;
     // Insert contact
     const insertSql = `INSERT INTO contacts (owner_id, name, phone, avatar, email, is_favorite, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`;
