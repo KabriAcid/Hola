@@ -22,6 +22,7 @@ export const ContactList: React.FC<ContactListProps> = ({
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -190,12 +191,22 @@ export const ContactList: React.FC<ContactListProps> = ({
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   No contacts yet
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-gray-600 mb-4">
                   Add your first contact to get started
                 </p>
+                <button
+                  className="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium"
+                  onClick={() => setShowAddModal(true)}
+                >
+                  Add Contact
+                </button>
               </div>
             </div>
           )}
+
+          {/* Add Contact Modal */}
+          {/* You may need to import ContactForm and pass the right props here */}
+          {/* <ContactForm isOpen={showAddModal} onSave={...} onClose={() => setShowAddModal(false)} ... /> */}
         </>
       )}
     </div>

@@ -1,16 +1,16 @@
-import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { User, Phone, Camera } from 'lucide-react';
-import { Contact } from '../../types';
-import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
-import { Modal } from '../ui/Modal';
-import { Avatar } from '../ui/Avatar';
+import React, { useState, useRef } from "react";
+import { motion } from "framer-motion";
+import { User, Phone, Camera } from "lucide-react";
+import { Contact } from "../../types";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
+import { Modal } from "../ui/Modal";
+import { Avatar } from "../ui/Avatar";
 
 interface ContactFormProps {
   isOpen: boolean;
   contact?: Contact;
-  onSave: (contact: Omit<Contact, 'id'>) => Promise<void>;
+  onSave: (contact: Omit<Contact, "id">) => Promise<void>;
   onClose: () => void;
   isLoading: boolean;
 }
@@ -23,26 +23,27 @@ export const ContactForm: React.FC<ContactFormProps> = ({
   isLoading,
 }) => {
   const [formData, setFormData] = useState({
-    name: contact?.name || '',
-    phone: contact?.phone || '',
-    avatar: contact?.avatar || '',
+    name: contact?.name || "",
+    phone: contact?.phone || "",
+    avatar: contact?.avatar || "",
+    email: contact?.email || "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = "Name is required";
     }
-    
+
     if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
+      newErrors.phone = "Phone number is required";
     } else if (!/^\+?[\d\s-()]+$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
+      newErrors.phone = "Please enter a valid phone number";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -50,18 +51,21 @@ export const ContactForm: React.FC<ContactFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    
+
     try {
+      // If avatar is empty, use the default avatar filename
+      const avatarValue = formData.avatar?.trim() ? formData.avatar : "default.png";
       await onSave({
         name: formData.name.trim(),
         phone: formData.phone.trim(),
-        avatar: formData.avatar,
+        avatar: avatarValue,
+        email: formData.email.trim(),
         isFavorite: contact?.isFavorite || false,
         isOnline: contact?.isOnline || false,
       });
       onClose();
     } catch (error) {
-      setErrors({ general: 'Failed to save contact' });
+      setErrors({ general: "Failed to save contact" });
     }
   };
 
@@ -84,19 +88,15 @@ export const ContactForm: React.FC<ContactFormProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={contact ? 'Edit Contact' : 'Add Contact'}
+      title={contact ? "Edit Contact" : "Add Contact"}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Avatar Section */}
         <div className="flex flex-col items-center">
           <div className="relative">
-            <Avatar
-              src={formData.avatar}
-              alt={formData.name}
-              size="xl"
-              className="cursor-pointer"
-              onClick={handleAvatarClick}
-            />
+            <div onClick={handleAvatarClick} className="cursor-pointer">
+              <Avatar src={formData.avatar} alt={formData.name} size="xl" />
+            </div>
             <motion.button
               type="button"
               onClick={handleAvatarClick}
@@ -136,6 +136,17 @@ export const ContactForm: React.FC<ContactFormProps> = ({
           icon={<Phone className="w-5 h-5" />}
         />
 
+        <Input
+          label="Email"
+          type="email"
+          placeholder="Enter email address"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          error={errors.email}
+        />
+
+        {/* Removed Label and Notes fields as per schema update */}
+
         {errors.general && (
           <motion.p
             initial={{ opacity: 0 }}
@@ -155,12 +166,8 @@ export const ContactForm: React.FC<ContactFormProps> = ({
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            className="flex-1"
-            isLoading={isLoading}
-          >
-            {contact ? 'Update' : 'Add'} Contact
+          <Button type="submit" className="flex-1" isLoading={isLoading}>
+            {contact ? "Update" : "Add"} Contact
           </Button>
         </div>
       </form>

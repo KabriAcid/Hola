@@ -13,6 +13,9 @@ export interface Contact {
   avatar?: string;
   isFavorite?: boolean;
   isOnline?: boolean;
+  email?: string;
+  label?: string;
+  notes?: string;
 }
 
 export interface CallLog {
@@ -21,7 +24,7 @@ export interface CallLog {
   contactName: string;
   contactPhone: string;
   contactAvatar?: string;
-  type: 'incoming' | 'outgoing' | 'missed';
+  type: "incoming" | "outgoing" | "missed";
   duration?: number;
   timestamp: Date;
 }
@@ -60,6 +63,6 @@ export interface CallState {
   isIncoming: boolean;
 }
 
-export type LoginMethod = 'truecaller' | 'phone';
+export type LoginMethod = "truecaller" | "phone";
 
-export type TabType = 'recents' | 'contacts' | 'messages' | 'settings';
+export type TabType = "recents" | "contacts" | "messages" | "settings";
