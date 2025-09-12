@@ -133,7 +133,10 @@ export const ContactForm: React.FC<ContactFormProps> = ({
       // Optionally, show a preview using base64 for the Avatar component
       const reader = new FileReader();
       reader.onload = (ev) => {
-        setFormData((prev) => ({ ...prev, avatar: ev.target?.result as string }));
+        setFormData((prev) => ({
+          ...prev,
+          avatar: ev.target?.result as string,
+        }));
       };
       reader.readAsDataURL(file);
     }
