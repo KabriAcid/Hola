@@ -24,7 +24,17 @@ export const useAuth = () => {
       });
     };
     window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    window.addEventListener(
+      "hola-auth-changed",
+      handleStorage as EventListener
+    );
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(
+        "hola-auth-changed",
+        handleStorage as EventListener
+      );
+    };
   }, []);
 
   const login = async (phone: string, password: string) => {

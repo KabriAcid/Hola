@@ -22,6 +22,11 @@ export const apiService = {
       localStorage.removeItem("jwt");
       this.token = null;
     }
+    try {
+      window.dispatchEvent(new CustomEvent("hola-auth-changed"));
+    } catch (e) {
+      // ignore in non-browser environments
+    }
   },
 
   // Persist user record (frontend-only cache)
@@ -30,6 +35,11 @@ export const apiService = {
       localStorage.setItem("hola_user", JSON.stringify(user));
     } else {
       localStorage.removeItem("hola_user");
+    }
+    try {
+      window.dispatchEvent(new CustomEvent("hola-auth-changed"));
+    } catch (e) {
+      // ignore in non-browser environments
     }
   },
 
@@ -46,6 +56,11 @@ export const apiService = {
   clearAuth() {
     this.setToken(null);
     this.setUser(null);
+    try {
+      window.dispatchEvent(new CustomEvent("hola-auth-changed"));
+    } catch (e) {
+      // ignore in non-browser environments
+    }
   },
 
   getToken() {
@@ -77,10 +92,7 @@ export const apiService = {
       throw new Error(data.error || data.message || "Login failed");
     }
     const data = await res.json();
-    console.debug("[apiService.login] success", {
-      status: res.status,
-      user: data.user,
-    });
+    
     if (data.token) this.setToken(data.token);
     if (data.user) this.setUser(data.user);
     return data.user;
