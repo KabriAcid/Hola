@@ -61,6 +61,8 @@ export const ContactList: React.FC<ContactListProps> = ({
         setLoading(false);
       });
   }, []);
+
+  
   // ContactItem component
   const ContactItem: React.FC<{ contact: Contact; index: number }> = ({
     contact,

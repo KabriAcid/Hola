@@ -34,14 +34,21 @@ const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
 
-  // If already authenticated, don't render auth forms (App.tsx will redirect)
+
+  // Redirect to /app/calls when authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/app/calls", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
   if (isAuthenticated) return null;
 
   const handleLogin = async (phone: string, password: string) => {
     setIsLoading(true);
     try {
       await login(phone, password);
-      navigate("/app/calls");
+      // Navigation will be handled by useEffect when isAuthenticated updates
     } catch (error) {
       throw error;
     } finally {
