@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   Phone,
   PhoneIncoming,
@@ -21,6 +22,7 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
   onCall,
   onMessage,
 }) => {
+  const navigate = useNavigate();
   const [callLogs, setCallLogs] = React.useState<CallLog[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -123,13 +125,13 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                 You have no call history yet. Add your first contact to start
                 calling!
               </p>
-              <a
-                href="/app/contacts"
+              <motion.button
+                onClick={() => navigate("/app/contacts")}
                 className="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium"
-                style={{ textDecoration: "none" }}
+                whileTap={{ scale: 0.95 }}
               >
                 Make your first call
-              </a>
+              </motion.button>
             </div>
           </div>
         ) : (

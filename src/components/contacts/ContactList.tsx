@@ -12,6 +12,7 @@ import {
 import { Contact } from "../../types";
 import { Avatar } from "../ui/Avatar";
 import { ContactForm } from "./ContactForm";
+import { apiService } from "../../services/api";
 
 interface ContactListProps {
   onCall: (contact: Contact) => void;
@@ -43,15 +44,8 @@ export const ContactList: React.FC<ContactListProps> = ({
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch("/api/contacts", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch contacts");
-        return res.json();
-      })
+    apiService
+      .getContacts()
       .then((data) => {
         setContacts(data);
         setLoading(false);
@@ -62,7 +56,6 @@ export const ContactList: React.FC<ContactListProps> = ({
       });
   }, []);
 
-  
   // ContactItem component
   const ContactItem: React.FC<{ contact: Contact; index: number }> = ({
     contact,
@@ -205,19 +198,14 @@ export const ContactList: React.FC<ContactListProps> = ({
 
   // Helper functions for edit and delete
   const handleEdit = (contact: Contact) => {
+    setError(null); // Clear any errors when editing
     setEditContact(contact);
     setShowAddModal(true);
   };
 
   const handleDelete = async (contactId: string) => {
     try {
-      const res = await fetch(`/api/contacts/${contactId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
-        },
-      });
-      if (!res.ok) throw new Error("Failed to delete contact");
+      await apiService.deleteContact(contactId);
       setContacts((prev) => prev.filter((c) => c.id !== contactId));
     } catch (err) {
       setError((err as Error).message || "Error deleting contact");
@@ -278,7 +266,10 @@ export const ContactList: React.FC<ContactListProps> = ({
                 </p>
                 <button
                   className="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium"
-                  onClick={() => setShowAddModal(true)}
+                  onClick={() => {
+                    setError(null); // Clear any errors when opening modal
+                    setShowAddModal(true);
+                  }}
                 >
                   Add Contact
                 </button>
@@ -293,97 +284,86 @@ export const ContactList: React.FC<ContactListProps> = ({
             isLoading={isSaving}
             onSave={async (contact) => {
               setIsSaving(true);
+
+              // Check for duplicate phone numbers (excluding current contact for edits)
+              const duplicateContact = contacts.find(
+                (c) =>
+                  c.phone === contact.phone &&
+                  (!editContact || c.id !== editContact.id)
+              );
+
+              if (duplicateContact) {
+                setError(
+                  `A contact with phone number ${contact.phone} already exists: ${duplicateContact.name}`
+                );
+                setIsSaving(false);
+                return;
+              }
+
               try {
-                const formData = new FormData();
-                formData.append("name", contact.name);
-                formData.append("phone", contact.phone);
-                formData.append("email", contact.email || "");
-                formData.append("isFavorite", contact.isFavorite ? "1" : "0");
-                if ((contact as any).avatarFile) {
-                  formData.append("avatar", (contact as any).avatarFile);
-                } else if (contact.avatar) {
-                  formData.append("avatar", contact.avatar);
-                }
                 if (editContact) {
-                  console.log("[EditContact] Submitting contact:", contact);
-                  formData.forEach((value, key) => {
-                    console.log(`[EditContact] FormData: ${key} =`, value);
-                  });
-                  const res = await fetch(`/api/contacts/${editContact.id}`, {
-                    method: "PUT",
-                    headers: {
-                      Authorization: `Bearer ${
-                        localStorage.getItem("jwt") || ""
-                      }`,
-                    },
-                    body: formData,
-                  });
-                  console.log("[EditContact] Response status:", res.status);
-                  if (!res.ok) throw new Error("Failed to update contact");
-                  const updatedContact = await res.json();
-                  setContacts((prev) => {
-                    const updated = prev.map((c) =>
+                  console.log("[EditContact] Updating contact:", contact);
+                  const updatedContact = await apiService.updateContact(
+                    editContact.id,
+                    {
+                      name: contact.name,
+                      phone: contact.phone,
+                      email: contact.email,
+                      isFavorite: contact.isFavorite,
+                      avatar: contact.avatar,
+                      avatarFile: (contact as any).avatarFile,
+                    }
+                  );
+                  setContacts((prev) =>
+                    prev.map((c) =>
                       c.id === editContact.id ? updatedContact : c
-                    );
-                    console.log(
-                      "[EditContact] Updated contacts state:",
-                      updated
-                    );
-                    return updated;
-                  });
-                  console.log(
-                    "[EditContact] Updated contact from backend:",
-                    updatedContact
+                    )
                   );
+                  console.log("[EditContact] Updated contact:", updatedContact);
                 } else {
-                  console.log("[AddContact] Submitting contact:", contact);
-                  formData.forEach((value, key) => {
-                    console.log(`[AddContact] FormData: ${key} =`, value);
+                  console.log("[AddContact] Adding contact:", contact);
+                  const newContact = await apiService.addContact({
+                    name: contact.name,
+                    phone: contact.phone,
+                    email: contact.email,
+                    isFavorite: contact.isFavorite,
+                    avatar: contact.avatar,
+                    isOnline: false,
+                    avatarFile: (contact as any).avatarFile,
                   });
-                  console.log(
-                    "[AddContact] About to submit fetch POST /api/contacts with FormData:"
-                  );
-                  formData.forEach((value, key) => {
-                    console.log(`[AddContact] FormData: ${key} =`, value);
-                  });
-                  const res = await fetch("/api/contacts", {
-                    method: "POST",
-                    headers: {
-                      Authorization: `Bearer ${
-                        localStorage.getItem("jwt") || ""
-                      }`,
-                    },
-                    body: formData,
-                  });
-                  console.log("[AddContact] Response status:", res.status);
-                  if (!res.ok) throw new Error("Failed to add contact");
-                  const newContact = await res.json();
                   setContacts((prev) => {
                     const updated = [...prev, newContact];
                     console.log(
-                      "[AddContact] Updated contacts state:",
+                      "[AddContact] Updated contacts array:",
                       updated
                     );
                     return updated;
                   });
-                  console.log(
-                    "[AddContact] New contact from backend:",
-                    newContact
-                  );
+                  console.log("[AddContact] Added contact:", newContact);
                 }
+
+                // Clear any previous errors and force close modal
+                setError(null);
                 setShowAddModal(false);
                 setEditContact(null);
+                console.log("[ContactList] Modal closed and form reset");
               } catch (err) {
                 console.error(
                   editContact ? "[EditContact] Error:" : "[AddContact] Error:",
                   err
                 );
+                console.error("Full error details:", err);
                 setError(
                   (err as Error).message ||
                     (editContact
                       ? "Error updating contact"
                       : "Error adding contact")
                 );
+
+                // Force close modal even on error since backend works fine
+                setShowAddModal(false);
+                setEditContact(null);
+                console.log("[ContactList] Modal force closed after error");
               } finally {
                 setIsSaving(false);
               }
@@ -391,6 +371,7 @@ export const ContactList: React.FC<ContactListProps> = ({
             onClose={() => {
               setShowAddModal(false);
               setEditContact(null);
+              setError(null); // Clear any errors when closing modal
             }}
           />
         </>

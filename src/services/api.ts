@@ -92,7 +92,7 @@ export const apiService = {
       throw new Error(data.error || data.message || "Login failed");
     }
     const data = await res.json();
-    
+
     if (data.token) this.setToken(data.token);
     if (data.user) this.setUser(data.user);
     return data.user;
@@ -137,28 +137,104 @@ export const apiService = {
 
   // Contacts
   async getContacts(): Promise<Contact[]> {
-    await delay(500);
-    return [...mockContacts];
+    const token = this.getToken();
+    const res = await fetch("/api/contacts", {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    });
+    if (!res.ok) throw new Error("Failed to fetch contacts");
+    return await res.json();
   },
 
-  async addContact(contact: Omit<Contact, "id">): Promise<Contact> {
-    await delay(500);
-    return {
-      ...contact,
-      id: `contact_${Date.now()}`,
-    };
+  async addContact(
+    contactData: Omit<Contact, "id"> & { avatarFile?: File }
+  ): Promise<Contact> {
+    const token = this.getToken();
+    const formData = new FormData();
+
+    formData.append("name", contactData.name);
+    formData.append("phone", contactData.phone);
+    formData.append("email", contactData.email || "");
+    formData.append("isFavorite", contactData.isFavorite ? "1" : "0");
+
+    if (contactData.avatarFile) {
+      formData.append("avatar", contactData.avatarFile);
+    } else if (contactData.avatar) {
+      formData.append("avatar", contactData.avatar);
+    }
+
+    const res = await fetch("/api/contacts", {
+      method: "POST",
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const error = await res
+        .json()
+        .catch(() => ({ error: "Failed to add contact" }));
+      throw new Error(error.error || "Failed to add contact");
+    }
+
+    return await res.json();
   },
 
-  async updateContact(id: string, updates: Partial<Contact>): Promise<Contact> {
-    await delay(500);
-    const contact = mockContacts.find((c) => c.id === id);
-    if (!contact) throw new Error("Contact not found");
-    return { ...contact, ...updates };
+  async updateContact(
+    id: string,
+    updates: Partial<Contact> & { avatarFile?: File }
+  ): Promise<Contact> {
+    const token = this.getToken();
+    const formData = new FormData();
+
+    if (updates.name !== undefined) formData.append("name", updates.name);
+    if (updates.phone !== undefined) formData.append("phone", updates.phone);
+    if (updates.email !== undefined)
+      formData.append("email", updates.email || "");
+    if (updates.isFavorite !== undefined)
+      formData.append("isFavorite", updates.isFavorite ? "1" : "0");
+
+    if (updates.avatarFile) {
+      formData.append("avatar", updates.avatarFile);
+    } else if (updates.avatar !== undefined) {
+      formData.append("avatar", updates.avatar);
+    }
+
+    const res = await fetch(`/api/contacts/${id}`, {
+      method: "PUT",
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const error = await res
+        .json()
+        .catch(() => ({ error: "Failed to update contact" }));
+      throw new Error(error.error || "Failed to update contact");
+    }
+
+    return await res.json();
   },
 
   async deleteContact(id: string): Promise<void> {
-    await delay(500);
-    // In real implementation, this would delete from backend
+    const token = this.getToken();
+    const res = await fetch(`/api/contacts/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    });
+
+    if (!res.ok) {
+      const error = await res
+        .json()
+        .catch(() => ({ error: "Failed to delete contact" }));
+      throw new Error(error.error || "Failed to delete contact");
+    }
   },
 
   // Call logs

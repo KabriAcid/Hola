@@ -516,6 +516,19 @@ app.put(
         );
       }
       safePhone = xss(rawPhone);
+
+      // Check for duplicate phone number (excluding current contact)
+      const duplicateContact = await dbGet(
+        `SELECT id, name FROM contacts WHERE owner_id = ? AND phone = ? AND id != ?`,
+        [req.user.id, safePhone, contactId]
+      );
+      if (duplicateContact) {
+        return sendError(
+          res,
+          409,
+          `A contact with phone number ${safePhone} already exists: ${duplicateContact.name}`
+        );
+      }
     }
     let safeAvatar = existing.avatar;
     if (req.file && req.file.filename) {
@@ -610,6 +623,24 @@ app.post(
       safeAvatar = xss(req.body.avatar.trim());
     }
     const safeEmail = email ? xss(email.trim()) : null;
+
+    // Check for duplicate phone number for this user
+    const existingContact = await dbGet(
+      `SELECT id, name FROM contacts WHERE owner_id = ? AND phone = ?`,
+      [req.user.id, safePhone]
+    );
+    if (existingContact) {
+      console.error(
+        "[POST /api/contacts] Duplicate phone found:",
+        existingContact
+      );
+      return sendError(
+        res,
+        409,
+        `A contact with phone number ${safePhone} already exists: ${existingContact.name}`
+      );
+    }
+
     // Insert contact
     const insertSql = `INSERT INTO contacts (owner_id, name, phone, avatar, email, is_favorite, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`;
     try {
