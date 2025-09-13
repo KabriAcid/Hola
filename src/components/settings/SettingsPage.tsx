@@ -8,6 +8,7 @@ import {
   Shield,
   LogOut,
   ChevronRight,
+  Mail,
   Edit,
   Camera,
 } from "lucide-react";
@@ -230,14 +231,29 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             icon={<User className="w-5 h-5" />}
           />
 
+          <Input
+            label="Email"
+            type="text"
+            value={profileData.name}
+            onChange={(e) =>
+              setProfileData({ ...profileData, name: e.target.value })
+            }
+            icon={<Mail className="w-5 h-5" />}
+          />
+
           <div className="flex space-x-3 pt-4">
             <Button
               variant="secondary"
               onClick={() => setShowProfileModal(false)}
+              className="hover:bg-gray-300 border-gray-200"
             >
               Cancel
             </Button>
-            <Button onClick={handleUpdateProfile} isLoading={isLoading}>
+            <Button
+              onClick={handleUpdateProfile}
+              isLoading={isLoading}
+              className="w-full"
+            >
               Save Changes
             </Button>
           </div>

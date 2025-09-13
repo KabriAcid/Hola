@@ -105,11 +105,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       </div>
 
       {loginMethod === "phone" ? (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
           <Input
             label="Phone Number"
             type="tel"
-            placeholder="+1 234 567 8900"
+            placeholder="Phone Number or Username"
             value={formData.phone}
             onChange={(e) =>
               setFormData({ ...formData, phone: e.currentTarget.value })

@@ -123,7 +123,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         <p className="text-gray-600">Create your account to get started</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
         <Input
           label="Full Name"
           type="text"
@@ -141,7 +141,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           label="Phone Number"
           type="tel"
           id="phone_number"
-          placeholder="+1 234 567 8900"
+          placeholder="Phone Number"
           value={formData.phone}
           onChange={(e) =>
             setFormData({ ...formData, phone: e.currentTarget.value })

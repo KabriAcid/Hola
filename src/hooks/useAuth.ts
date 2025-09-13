@@ -42,7 +42,7 @@ export const useAuth = () => {
     apiService.setToken(null);
     setAuthState({ isAuthenticated: false, user: null, isLoading: false });
     // Optionally, force reload to clear any stale state
-    // window.location.href = "/login";
+    window.location.href = "/login";
   };
 
   const updateUser = (updatedUser: User) => {
