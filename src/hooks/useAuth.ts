@@ -3,26 +3,28 @@ import { User, AuthState } from "../types";
 import { apiService } from "../services/api";
 
 export const useAuth = () => {
+  // Initialize from localStorage synchronously
+  const initialUser = apiService.getUser();
+  const initialToken = apiService.getToken();
   const [authState, setAuthState] = useState<AuthState>({
-    isAuthenticated: false,
-    user: null,
-    isLoading: true,
+    isAuthenticated: !!initialUser && !!initialToken,
+    user: initialUser,
+    isLoading: false,
   });
 
-  // Load user from JWT on mount
+  // Keep localStorage and state in sync if token/user changes externally
   useEffect(() => {
-    const loadUser = async () => {
-      setAuthState((prev) => ({ ...prev, isLoading: true }));
-      try {
-        const user = await apiService.getCurrentUser();
-        setAuthState({ isAuthenticated: true, user, isLoading: false });
-      } catch (err) {
-        // Always clear JWT and state on error
-        apiService.setToken(null);
-        setAuthState({ isAuthenticated: false, user: null, isLoading: false });
-      }
+    const handleStorage = () => {
+      const user = apiService.getUser();
+      const token = apiService.getToken();
+      setAuthState({
+        isAuthenticated: !!user && !!token,
+        user,
+        isLoading: false,
+      });
     };
-    loadUser();
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   const login = async (phone: string, password: string) => {
@@ -31,21 +33,21 @@ export const useAuth = () => {
       const user = await apiService.login(phone, password);
       setAuthState({ isAuthenticated: true, user, isLoading: false });
     } catch (err) {
-      // Always clear JWT and state on error
-      apiService.setToken(null);
+      apiService.clearAuth();
       setAuthState({ isAuthenticated: false, user: null, isLoading: false });
       throw err;
     }
   };
 
   const logout = () => {
-    apiService.setToken(null);
+    apiService.clearAuth();
     setAuthState({ isAuthenticated: false, user: null, isLoading: false });
-    // Optionally, force reload to clear any stale state
+    // Keep existing behaviour to force a full reload to clear state
     window.location.href = "/login";
   };
 
   const updateUser = (updatedUser: User) => {
+    apiService.setUser(updatedUser);
     setAuthState((prev) => ({ ...prev, user: updatedUser }));
   };
 

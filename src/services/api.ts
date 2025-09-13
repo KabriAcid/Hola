@@ -24,6 +24,30 @@ export const apiService = {
     }
   },
 
+  // Persist user record (frontend-only cache)
+  setUser(user: User | null) {
+    if (user) {
+      localStorage.setItem("hola_user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("hola_user");
+    }
+  },
+
+  getUser(): User | null {
+    try {
+      const raw = localStorage.getItem("hola_user");
+      if (!raw) return null;
+      return JSON.parse(raw) as User;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  clearAuth() {
+    this.setToken(null);
+    this.setUser(null);
+  },
+
   getToken() {
     if (this.token) return this.token;
     const token = localStorage.getItem("jwt");
@@ -38,29 +62,35 @@ export const apiService = {
       body: JSON.stringify({ phone, password }),
     });
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || "Login failed");
+      const data = await res.json().catch(async () => {
+        try {
+          const text = await res.text();
+          return { raw: text };
+        } catch (e) {
+          return {};
+        }
+      });
+      console.error("[apiService.login] failed", {
+        status: res.status,
+        body: data,
+      });
+      throw new Error(data.error || data.message || "Login failed");
     }
     const data = await res.json();
+    console.debug("[apiService.login] success", {
+      status: res.status,
+      user: data.user,
+    });
     if (data.token) this.setToken(data.token);
+    if (data.user) this.setUser(data.user);
     return data.user;
   },
 
+  // Return stored user from localStorage. No network call by design.
   async getCurrentUser(): Promise<User> {
-    const token = this.getToken();
-    if (!token) {
-      this.setToken(null);
-      throw new Error("No token");
-    }
-    const res = await fetch("/api/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) {
-      this.setToken(null);
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || "Failed to fetch user");
-    }
-    return await res.json();
+    const user = this.getUser();
+    if (!user) throw new Error("No user in storage");
+    return user;
   },
 
   async register(name: string, phone: string, password: string): Promise<User> {
