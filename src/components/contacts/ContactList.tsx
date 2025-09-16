@@ -13,6 +13,7 @@ import { Contact } from "../../types";
 import { Avatar } from "../ui/Avatar";
 import { ContactForm } from "./ContactForm";
 import { apiService } from "../../services/api";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
 
 interface ContactListProps {
   onCall: (contact: Contact) => void;
@@ -72,7 +73,7 @@ export const ContactList: React.FC<ContactListProps> = ({
       >
         <div className="flex items-center flex-1">
           <Avatar
-            src={contact.avatar}
+            src={`/assets/avatars/${contact.avatar}`}
             alt={contact.name}
             size="md"
             isOnline={contact.isOnline}
@@ -220,7 +221,7 @@ export const ContactList: React.FC<ContactListProps> = ({
     <div className="flex-1 overflow-y-auto">
       {loading ? (
         <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center text-gray-500">Loading contacts...</div>
+          <LoadingSpinner size="md"/>
         </div>
       ) : error ? (
         <div className="flex-1 flex items-center justify-center p-8">

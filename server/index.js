@@ -540,7 +540,7 @@ app.put(
     if (email !== undefined) safeEmail = email ? xss(email.trim()) : null;
     let safeIsFavorite =
       typeof isFavorite !== "undefined"
-        ? isFavorite === "1" || isFavorite === 1 || isFavorite === true
+        ? '0'
         : existing.is_favorite;
     // Update contact
     const updateSql = `UPDATE contacts SET name = ?, phone = ?, avatar = ?, email = ?, is_favorite = ?, updated_at = datetime('now') WHERE id = ? AND owner_id = ?`;

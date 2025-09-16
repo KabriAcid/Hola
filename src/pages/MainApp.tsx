@@ -204,7 +204,12 @@ export const MainApp: React.FC = () => {
         return res.json();
       })
       .then((data) => {
-        setContacts(data);
+        // Ensure all contact IDs are strings
+        const contactsWithStringIds = data.map((contact) => ({
+          ...contact,
+          id: String(contact.id),
+        }));
+        setContacts(contactsWithStringIds);
         setContactsLoading(false);
       })
       .catch((err) => {
@@ -369,8 +374,13 @@ export const MainApp: React.FC = () => {
   };
 
   const handleSelectConversation = (contactId: string) => {
+    console.log("handleSelectConversation called with contactId:", contactId);
     setSelectedContactId(contactId);
-    navigate("/app/messages");
+
+    // Ensure we're on the messages route
+    if (!location.pathname.startsWith("/app/messages")) {
+      navigate("/app/messages");
+    }
   };
 
   const handleBackFromChat = () => {
@@ -389,6 +399,22 @@ export const MainApp: React.FC = () => {
   const contactMessages = selectedContactId
     ? messages.filter((m) => m.contactId === selectedContactId)
     : [];
+
+  // Debug logging
+  useEffect(() => {
+    if (selectedContactId) {
+      console.log(
+        "selectedContactId:",
+        selectedContactId,
+        typeof selectedContactId
+      );
+      console.log("selectedContact:", selectedContact);
+      console.log(
+        "contacts IDs:",
+        contacts.map((c) => ({ id: c.id, name: c.name, idType: typeof c.id }))
+      );
+    }
+  }, [selectedContactId, selectedContact, contacts]);
 
   const getHeaderTitle = () => {
     if (selectedContactId && selectedContact) {
@@ -419,10 +445,7 @@ export const MainApp: React.FC = () => {
       };
     }
     if (path.startsWith("/app/messages")) {
-      return {
-        showSearch: true,
-        onSearch: () => console.log("Search messages"),
-      };
+      return {};
     }
     return {};
   };
@@ -522,7 +545,6 @@ export const MainApp: React.FC = () => {
                     className="h-full"
                   >
                     <ConversationList
-                      conversations={conversations}
                       onSelectConversation={handleSelectConversation}
                     />
                   </motion.div>

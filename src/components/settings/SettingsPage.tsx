@@ -121,7 +121,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           className="bg-white p-6 mb-6"
         >
           <div className="flex items-center space-x-4">
-            <Avatar src={user.avatar} alt={user.name} size="xl" />
+            <Avatar src={`assets/avatars/${user.avatar}`} alt={user.name} size="xl" />
             <div className="flex-1">
               <h2 className="text-xl font-semibold text-black">{user.name}</h2>
               <p className="text-gray-600">{user.phone}</p>
