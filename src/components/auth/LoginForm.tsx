@@ -19,7 +19,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   isLoading,
   onSwitchToRegister,
 }) => {
-  
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -122,6 +121,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             <Input
               label="Password"
               type={showPassword ? "text" : "password"}
+              name="password"
               placeholder="Enter your password"
               value={formData.password}
               onChange={(e) =>

@@ -223,7 +223,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({
             type="button"
             variant="secondary"
             onClick={onClose}
-            className="hover:border-gray-400 hover:bg-gray-300"
+            className="hover:bg-gray-300 border-gray-200"
           >
             Cancel
           </Button>

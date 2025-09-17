@@ -270,5 +270,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for modern communication**
 
-Phone Login : +1234567890
-Password: password
+## Links
+https://netcatsolutions.ng/sip-trunk-service/?utm_source=chatgpt.com
