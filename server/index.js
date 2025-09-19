@@ -748,20 +748,61 @@ app.post(
 app.get("/api/call-logs", authenticateJWT, async (req, res) => {
   try {
     const userId = req.user.id;
-    db.all(
-      `SELECT id, caller_id, callee_id, channel, call_type, direction, status, started_at, ended_at, duration
-       FROM call_logs
-       WHERE caller_id = ? OR callee_id = ?
-       ORDER BY started_at DESC`,
-      [userId, userId],
-      (err, rows) => {
-        if (err) {
-          console.error(err);
-          return sendError(res, 500, "Database error.");
+
+    // Get call logs with user information
+    const rows = await new Promise((resolve, reject) => {
+      db.all(
+        `SELECT 
+          cl.id, 
+          cl.caller_id, 
+          cl.callee_id, 
+          cl.channel, 
+          cl.call_type, 
+          cl.direction, 
+          cl.status, 
+          cl.started_at, 
+          cl.ended_at, 
+          cl.duration,
+          CASE 
+            WHEN cl.caller_id = ? THEN callee.name 
+            ELSE caller.name 
+          END as contact_name,
+          CASE 
+            WHEN cl.caller_id = ? THEN callee.phone 
+            ELSE caller.phone 
+          END as contact_phone,
+          CASE 
+            WHEN cl.caller_id = ? THEN callee.avatar 
+            ELSE caller.avatar 
+          END as contact_avatar
+        FROM call_logs cl
+        LEFT JOIN users caller ON cl.caller_id = caller.id
+        LEFT JOIN users callee ON cl.callee_id = callee.id
+        WHERE cl.caller_id = ? OR cl.callee_id = ?
+        ORDER BY cl.started_at DESC`,
+        [userId, userId, userId, userId, userId],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
         }
-        res.json(Array.isArray(rows) ? rows : []);
-      }
-    );
+      );
+    });
+
+    // Transform to frontend format
+    const transformedLogs = rows.map((row) => ({
+      id: String(row.id),
+      contactId: String(
+        row.caller_id === userId ? row.callee_id : row.caller_id
+      ),
+      contactName: row.contact_name || "Unknown",
+      contactPhone: row.contact_phone || "",
+      contactAvatar: row.contact_avatar || "default.png",
+      type: row.direction === "incoming" ? "incoming" : "outgoing", // TODO: Add missed call logic
+      duration: row.duration || 0,
+      timestamp: row.started_at, // Keep as string, will be parsed on frontend
+    }));
+
+    res.json(transformedLogs);
   } catch (err) {
     console.error(err);
     return sendError(res, 500, "Database error.");

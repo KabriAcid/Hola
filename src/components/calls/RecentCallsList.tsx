@@ -41,18 +41,16 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
         return res.json();
       })
       .then((data) => {
-        // Map backend fields to frontend camelCase if needed
+        // Backend now returns properly formatted data
         const mapped = data.map((item: any) => ({
           id: String(item.id),
-          callerId: item.caller_id,
-          calleeId: item.callee_id,
-          channel: item.channel,
-          callType: item.call_type,
-          direction: item.direction,
-          status: item.status,
-          startedAt: item.started_at,
-          endedAt: item.ended_at,
+          contactId: String(item.contactId),
+          contactName: item.contactName,
+          contactPhone: item.contactPhone,
+          contactAvatar: item.contactAvatar,
+          type: item.type as "incoming" | "outgoing" | "missed",
           duration: item.duration,
+          timestamp: new Date(item.timestamp), // Convert string to Date
         }));
         setCallLogs(mapped);
         setLoading(false);
@@ -76,21 +74,50 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
   };
 
   const formatTime = (date: Date | string) => {
+    if (!date) return "Unknown time";
+
     const d = typeof date === "string" ? new Date(date) : date;
+
+    // Check if date is valid
+    if (isNaN(d.getTime())) {
+      return "Invalid date";
+    }
+
     const now = new Date();
     const diff = now.getTime() - d.getTime();
-    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
+    const weeks = Math.floor(days / 7);
 
-    if (minutes < 60) {
-      return `${minutes}m ago`;
+    if (seconds < 30) {
+      return "Just now";
+    } else if (seconds < 60) {
+      return `${seconds} seconds ago`;
+    } else if (minutes === 1) {
+      return "1 minute ago";
+    } else if (minutes < 60) {
+      return `${minutes} minutes ago`;
+    } else if (hours === 1) {
+      return "1 hour ago";
     } else if (hours < 24) {
-      return `${hours}h ago`;
+      return `${hours} hours ago`;
     } else if (days === 1) {
       return "Yesterday";
+    } else if (days < 7) {
+      return `${days} days ago`;
+    } else if (weeks === 1) {
+      return "1 week ago";
+    } else if (weeks < 4) {
+      return `${weeks} weeks ago`;
     } else {
-      return d.toLocaleDateString();
+      // For older dates, use MM/DD/YYYY format
+      return d.toLocaleDateString("en-US", {
+        month: "numeric",
+        day: "numeric",
+        year: "numeric",
+      });
     }
   };
 
@@ -173,7 +200,7 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                   </div>
                   <div className="flex items-center text-sm text-gray-600">
                     <span>{formatTime(call.timestamp)}</span>
-                    {call.duration && call.duration > 0 && !isMissed && (
+                    {!!(call.duration && call.duration > 0 && !isMissed) && (
                       <>
                         <span className="mx-2">•</span>
                         <span>{formatDuration(call.duration)}</span>
