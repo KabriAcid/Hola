@@ -108,7 +108,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({
         avatar: avatarValue,
         avatarFile: formData.avatarFile,
         email: formData.email.trim(),
-        isFavorite: contact?.isFavorite || false, // Default to false for new contacts
+        isFavorite: contact ? contact.isFavorite : false, // Explicitly false for new contacts
         isOnline: contact?.isOnline || false,
       });
       // Note: onClose() is handled by the parent component after successful save

@@ -539,9 +539,7 @@ app.put(
     let safeEmail = existing.email;
     if (email !== undefined) safeEmail = email ? xss(email.trim()) : null;
     let safeIsFavorite =
-      typeof isFavorite !== "undefined"
-        ? '0'
-        : existing.is_favorite;
+      typeof isFavorite !== "undefined" ? "0" : existing.is_favorite;
     // Update contact
     const updateSql = `UPDATE contacts SET name = ?, phone = ?, avatar = ?, email = ?, is_favorite = ?, updated_at = datetime('now') WHERE id = ? AND owner_id = ?`;
     await dbRun(updateSql, [
@@ -553,6 +551,34 @@ app.put(
       contactId,
       req.user.id,
     ]);
+    // Return the updated contact
+    const updated = await dbGet(
+      `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, created_at, updated_at FROM contacts WHERE id = ?`,
+      [contactId]
+    );
+    res.json(updated);
+  })
+);
+
+// Toggle favorite status for a contact (JWT protected)
+app.put(
+  "/api/contacts/:id/favorite",
+  authenticateJWT,
+  asyncHandler(async (req, res) => {
+    const contactId = req.params.id;
+    const { isFavorite } = req.body;
+    // Validate isFavorite
+    const safeIsFavorite = isFavorite === true || isFavorite === '1' || isFavorite === 1 ? 1 : 0;
+    // Only allow updating own contact
+    const existing = await dbGet(
+      `SELECT id FROM contacts WHERE id = ? AND owner_id = ?`,
+      [contactId, req.user.id]
+    );
+    if (!existing) return sendError(res, 404, "Contact not found");
+    await dbRun(
+      `UPDATE contacts SET is_favorite = ?, updated_at = datetime('now') WHERE id = ? AND owner_id = ?`,
+      [safeIsFavorite, contactId, req.user.id]
+    );
     // Return the updated contact
     const updated = await dbGet(
       `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, created_at, updated_at FROM contacts WHERE id = ?`,
@@ -623,6 +649,8 @@ app.post(
       safeAvatar = xss(req.body.avatar.trim());
     }
     const safeEmail = email ? xss(email.trim()) : null;
+    const safeIsFavorite =
+      isFavorite === true || isFavorite === "1" || isFavorite === 1 ? 1 : 0;
 
     // Check for duplicate phone number for this user
     const existingContact = await dbGet(
@@ -650,7 +678,7 @@ app.post(
         safePhone,
         safeAvatar,
         safeEmail,
-        isFavorite ? 1 : 0,
+        safeIsFavorite,
       ]);
       console.error("[POST /api/contacts] Inserted contact ID:", result.lastID);
       // Return the created contact

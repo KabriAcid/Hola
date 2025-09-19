@@ -189,6 +189,8 @@ export const MainApp: React.FC = () => {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  // Force refresh of ContactList (which self-fetches) after add/update
+  const [contactsRefreshKey, setContactsRefreshKey] = useState(0);
 
   // Load contacts from backend
   useEffect(() => {
@@ -283,10 +285,16 @@ export const MainApp: React.FC = () => {
     setIsLoading(true);
     try {
       const newContact = await apiService.addContact(contactData);
-      setContacts((prev) => [
-        ...prev,
-        { ...newContact, id: `contact_${Date.now()}` },
-      ]);
+      // Normalize id to string and append
+      const normalized = {
+        ...newContact,
+        id: String((newContact as any).id),
+      } as Contact;
+      setContacts((prev) => [...prev, normalized]);
+      // Close modal and bump refresh key so ContactList refetches
+      setShowContactForm(false);
+      setEditingContact(undefined);
+      setContactsRefreshKey((k) => k + 1);
     } catch (error) {
       console.error("Failed to add contact:", error);
     } finally {
@@ -303,14 +311,18 @@ export const MainApp: React.FC = () => {
         editingContact.id,
         contactData
       );
+      // Normalize id to string and update
+      const normalized = {
+        ...updatedContact,
+        id: String((updatedContact as any).id),
+      } as Contact;
       setContacts((prev) =>
-        prev.map((c) =>
-          c.id === editingContact.id
-            ? { ...updatedContact, id: editingContact.id }
-            : c
-        )
+        prev.map((c) => (c.id === editingContact.id ? normalized : c))
       );
+      // Close modal and bump refresh key so ContactList refetches
       setEditingContact(undefined);
+      setShowContactForm(false);
+      setContactsRefreshKey((k) => k + 1);
     } catch (error) {
       console.error("Failed to update contact:", error);
     } finally {
@@ -375,7 +387,7 @@ export const MainApp: React.FC = () => {
 
   const handleSelectConversation = (contactId: string) => {
     console.log("handleSelectConversation called with contactId:", contactId);
-    setSelectedContactId(contactId);
+    setSelectedContactId(String(contactId));
 
     // Ensure we're on the messages route
     if (!location.pathname.startsWith("/app/messages")) {
@@ -517,6 +529,7 @@ export const MainApp: React.FC = () => {
                       </div>
                     ) : (
                       <ContactList
+                        key={contactsRefreshKey}
                         onCall={(contact) =>
                           handleCall(contact.phone, contact.name)
                         }
