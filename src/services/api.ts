@@ -220,6 +220,30 @@ export const apiService = {
     return await res.json();
   },
 
+  async toggleContactFavorite(
+    id: string,
+    isFavorite: boolean
+  ): Promise<Contact> {
+    const token = this.getToken();
+    const res = await fetch(`/api/contacts/${id}/favorite`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+      body: JSON.stringify({ isFavorite }),
+    });
+
+    if (!res.ok) {
+      const error = await res
+        .json()
+        .catch(() => ({ error: "Failed to toggle favorite" }));
+      throw new Error(error.error || "Failed to toggle favorite");
+    }
+
+    return await res.json();
+  },
+
   async deleteContact(id: string): Promise<void> {
     const token = this.getToken();
     const res = await fetch(`/api/contacts/${id}`, {

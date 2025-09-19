@@ -167,9 +167,19 @@ export const ContactList: React.FC<ContactListProps> = ({
                   </button>
                   <button
                     className="flex items-center px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
-                    onClick={() => {
+                    onClick={async () => {
                       setDropdownOpen(null);
-                      onToggleFavorite(contact.id);
+                      try {
+                        const updatedContact = await apiService.toggleContactFavorite(
+                          contact.id,
+                          !contact.isFavorite
+                        );
+                        setContacts((prev) =>
+                          prev.map((c) => (c.id === contact.id ? updatedContact : c))
+                        );
+                      } catch (err) {
+                        setError((err as Error).message || "Error toggling favorite");
+                      }
                     }}
                   >
                     {contact.isFavorite ? (

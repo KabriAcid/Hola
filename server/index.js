@@ -568,7 +568,8 @@ app.put(
     const contactId = req.params.id;
     const { isFavorite } = req.body;
     // Validate isFavorite
-    const safeIsFavorite = isFavorite === true || isFavorite === '1' || isFavorite === 1 ? 1 : 0;
+    const safeIsFavorite =
+      isFavorite === true || isFavorite === "1" || isFavorite === 1 ? 1 : 0;
     // Only allow updating own contact
     const existing = await dbGet(
       `SELECT id FROM contacts WHERE id = ? AND owner_id = ?`,

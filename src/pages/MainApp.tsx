@@ -339,12 +339,26 @@ export const MainApp: React.FC = () => {
     }
   };
 
-  const handleToggleFavorite = (contactId: string) => {
-    setContacts((prev) =>
-      prev.map((c) =>
-        c.id === contactId ? { ...c, isFavorite: !c.isFavorite } : c
-      )
-    );
+  const handleToggleFavorite = async (contactId: string) => {
+    try {
+      const contact = contacts.find((c) => c.id === contactId);
+      if (!contact) return;
+
+      const updatedContact = await apiService.toggleContactFavorite(
+        contactId,
+        !contact.isFavorite
+      );
+
+      // Update local state with the response from backend
+      setContacts((prev) =>
+        prev.map((c) => (c.id === contactId ? updatedContact : c))
+      );
+
+      // Bump refresh key so ContactList refetches
+      setContactsRefreshKey((k) => k + 1);
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+    }
   };
 
   const handleSendMessage = async (contactId: string, content: string) => {
