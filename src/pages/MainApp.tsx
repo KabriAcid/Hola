@@ -234,7 +234,7 @@ export const MainApp: React.FC = () => {
 
     // Log the call in the database
     try {
-      await apiService.addCallLog(phone, "audio", channel);
+      await apiService.addCallLog(phone, name, "audio", channel);
       console.log("Call logged successfully");
     } catch (error) {
       console.error("Failed to log call:", error);

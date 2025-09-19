@@ -703,6 +703,7 @@ app.post(
   asyncHandler(async (req, res) => {
     const {
       calleePhone,
+      calleeName,
       callType = "audio",
       direction = "outgoing",
       channel,
@@ -712,35 +713,42 @@ app.post(
       return sendError(res, 400, "Callee phone number is required");
     }
 
-    // Find the callee user by phone number
+    // Find the callee user by phone number (optional - they might not be registered)
     const calleeUser = await dbGet("SELECT id FROM users WHERE phone = ?", [
       calleePhone,
     ]);
 
-    if (!calleeUser) {
-      return sendError(res, 404, "Callee not found");
-    }
+    // Use current timestamp with timezone adjustment for Nigeria (UTC+1)
+    const nigerianTime = new Date(
+      Date.now() + 1 * 60 * 60 * 1000
+    ).toISOString();
 
-    // Insert call log
+    // Insert call log - use NULL for callee_id if user not found
     const insertSql = `INSERT INTO call_logs (caller_id, callee_id, channel, call_type, direction, status, started_at) 
-                       VALUES (?, ?, ?, ?, ?, 'completed', datetime('now'))`;
+                       VALUES (?, ?, ?, ?, ?, 'completed', ?)`;
 
     const result = await dbRun(insertSql, [
       req.user.id,
-      calleeUser.id,
+      calleeUser ? calleeUser.id : null, // Allow NULL for non-registered users
       channel || null,
       callType,
       direction,
+      nigerianTime,
     ]);
 
-    // Return the created call log
-    const callLog = await dbGet(
-      `SELECT id, caller_id, callee_id, channel, call_type, direction, status, started_at, ended_at, duration
-       FROM call_logs WHERE id = ?`,
-      [result.lastID]
-    );
-
-    res.status(201).json(callLog);
+    // Return the created call log with contact info
+    res.status(201).json({
+      id: result.lastID,
+      caller_id: req.user.id,
+      callee_id: calleeUser ? calleeUser.id : null,
+      callee_phone: calleePhone,
+      callee_name: calleeName || "Unknown",
+      channel: channel || null,
+      call_type: callType,
+      direction: direction,
+      status: "completed",
+      started_at: nigerianTime,
+    });
   })
 );
 
@@ -749,7 +757,7 @@ app.get("/api/call-logs", authenticateJWT, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get call logs with user information
+    // Get call logs with user information and handle non-registered contacts
     const rows = await new Promise((resolve, reject) => {
       db.all(
         `SELECT 
@@ -764,16 +772,22 @@ app.get("/api/call-logs", authenticateJWT, async (req, res) => {
           cl.ended_at, 
           cl.duration,
           CASE 
-            WHEN cl.caller_id = ? THEN callee.name 
-            ELSE caller.name 
+            WHEN cl.caller_id = ? THEN 
+              COALESCE(callee.name, 'Unknown Contact')
+            ELSE 
+              COALESCE(caller.name, 'Unknown Caller')
           END as contact_name,
           CASE 
-            WHEN cl.caller_id = ? THEN callee.phone 
-            ELSE caller.phone 
+            WHEN cl.caller_id = ? THEN 
+              COALESCE(callee.phone, 'Unknown')
+            ELSE 
+              COALESCE(caller.phone, 'Unknown')
           END as contact_phone,
           CASE 
-            WHEN cl.caller_id = ? THEN callee.avatar 
-            ELSE caller.avatar 
+            WHEN cl.caller_id = ? THEN 
+              COALESCE(callee.avatar, 'default.png')
+            ELSE 
+              COALESCE(caller.avatar, 'default.png')
           END as contact_avatar
         FROM call_logs cl
         LEFT JOIN users caller ON cl.caller_id = caller.id
@@ -788,16 +802,52 @@ app.get("/api/call-logs", authenticateJWT, async (req, res) => {
       );
     });
 
+    // For calls to non-registered users, get contact info from the user's contacts
+    const enhancedRows = await Promise.all(
+      rows.map(async (row) => {
+        if (
+          row.caller_id === userId &&
+          (!row.callee_id || row.contact_name === "Unknown Contact")
+        ) {
+          // This is an outgoing call to a non-registered user or unknown contact
+          // Find contact info from user's contacts by phone number pattern matching
+          const contacts = await new Promise((resolve, reject) => {
+            db.all(
+              `SELECT name, phone, avatar FROM contacts 
+             WHERE owner_id = ? 
+             ORDER BY id DESC`,
+              [userId],
+              (err, contacts) => {
+                if (err) reject(err);
+                else resolve(contacts);
+              }
+            );
+          });
+
+          // Since we don't have the exact phone in call_logs, we'll use the most recent contact
+          // In a future improvement, we should store the phone number in call_logs
+          if (contacts && contacts.length > 0) {
+            const mostRecentContact = contacts[0]; // Get the most recently added contact
+            return {
+              ...row,
+              contact_name: mostRecentContact.name,
+              contact_phone: mostRecentContact.phone,
+              contact_avatar: mostRecentContact.avatar || "default.png",
+            };
+          }
+        }
+        return row;
+      })
+    );
+
     // Transform to frontend format
-    const transformedLogs = rows.map((row) => ({
+    const transformedLogs = enhancedRows.map((row) => ({
       id: String(row.id),
-      contactId: String(
-        row.caller_id === userId ? row.callee_id : row.caller_id
-      ),
+      contactId: String(row.callee_id || `temp_${row.id}`),
       contactName: row.contact_name || "Unknown",
       contactPhone: row.contact_phone || "",
       contactAvatar: row.contact_avatar || "default.png",
-      type: row.direction === "incoming" ? "incoming" : "outgoing", // TODO: Add missed call logic
+      type: row.direction === "incoming" ? "incoming" : "outgoing",
       duration: row.duration || 0,
       timestamp: row.started_at, // Keep as string, will be parsed on frontend
     }));

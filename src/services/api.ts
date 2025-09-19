@@ -282,6 +282,7 @@ export const apiService = {
 
   async addCallLog(
     calleePhone: string,
+    calleeName: string,
     callType: "audio" | "video" = "audio",
     channel?: string
   ): Promise<any> {
@@ -294,6 +295,7 @@ export const apiService = {
       },
       body: JSON.stringify({
         calleePhone,
+        calleeName,
         callType,
         direction: "outgoing",
         channel,
