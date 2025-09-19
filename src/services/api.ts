@@ -263,16 +263,51 @@ export const apiService = {
 
   // Call logs
   async getCallLogs(): Promise<CallLog[]> {
-    await delay(500);
-    return [...mockCallLogs];
+    const token = this.getToken();
+    const res = await fetch("/api/call-logs", {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    });
+
+    if (!res.ok) {
+      const error = await res
+        .json()
+        .catch(() => ({ error: "Failed to fetch call logs" }));
+      throw new Error(error.error || "Failed to fetch call logs");
+    }
+
+    return res.json();
   },
 
-  async addCallLog(callLog: Omit<CallLog, "id">): Promise<CallLog> {
-    await delay(300);
-    return {
-      ...callLog,
-      id: `call_${Date.now()}`,
-    };
+  async addCallLog(
+    calleePhone: string,
+    callType: "audio" | "video" = "audio",
+    channel?: string
+  ): Promise<any> {
+    const token = this.getToken();
+    const res = await fetch("/api/call-logs", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+      body: JSON.stringify({
+        calleePhone,
+        callType,
+        direction: "outgoing",
+        channel,
+      }),
+    });
+
+    if (!res.ok) {
+      const error = await res
+        .json()
+        .catch(() => ({ error: "Failed to log call" }));
+      throw new Error(error.error || "Failed to log call");
+    }
+
+    return res.json();
   },
 
   // Messages

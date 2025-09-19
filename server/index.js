@@ -696,6 +696,54 @@ app.post(
   })
 );
 
+// Add a new call log (JWT protected)
+app.post(
+  "/api/call-logs",
+  authenticateJWT,
+  asyncHandler(async (req, res) => {
+    const {
+      calleePhone,
+      callType = "audio",
+      direction = "outgoing",
+      channel,
+    } = req.body;
+
+    if (!calleePhone) {
+      return sendError(res, 400, "Callee phone number is required");
+    }
+
+    // Find the callee user by phone number
+    const calleeUser = await dbGet("SELECT id FROM users WHERE phone = ?", [
+      calleePhone,
+    ]);
+
+    if (!calleeUser) {
+      return sendError(res, 404, "Callee not found");
+    }
+
+    // Insert call log
+    const insertSql = `INSERT INTO call_logs (caller_id, callee_id, channel, call_type, direction, status, started_at) 
+                       VALUES (?, ?, ?, ?, ?, 'completed', datetime('now'))`;
+
+    const result = await dbRun(insertSql, [
+      req.user.id,
+      calleeUser.id,
+      channel || null,
+      callType,
+      direction,
+    ]);
+
+    // Return the created call log
+    const callLog = await dbGet(
+      `SELECT id, caller_id, callee_id, channel, call_type, direction, status, started_at, ended_at, duration
+       FROM call_logs WHERE id = ?`,
+      [result.lastID]
+    );
+
+    res.status(201).json(callLog);
+  })
+);
+
 // Get call logs for the current user (JWT protected)
 app.get("/api/call-logs", authenticateJWT, async (req, res) => {
   try {

@@ -220,7 +220,7 @@ export const MainApp: React.FC = () => {
       });
   }, []);
 
-  const handleCall = (phone: string, name: string) => {
+  const handleCall = async (phone: string, name: string) => {
     const contact = contacts.find((c) => c.phone === phone) || {
       id: "temp",
       name,
@@ -231,6 +231,16 @@ export const MainApp: React.FC = () => {
     setCallChannel(channel);
     setIsCallAnswered(false);
     startCall(contact);
+
+    // Log the call in the database
+    try {
+      await apiService.addCallLog(phone, "audio", channel);
+      console.log("Call logged successfully");
+    } catch (error) {
+      console.error("Failed to log call:", error);
+      // Continue with the call even if logging fails
+    }
+
     // Send call-invite via socket
     if (user && socketRef.current) {
       socketRef.current.emit("call-invite", {

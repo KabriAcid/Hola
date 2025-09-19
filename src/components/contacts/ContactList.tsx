@@ -71,7 +71,10 @@ export const ContactList: React.FC<ContactListProps> = ({
         transition={{ delay: index * 0.05 }}
         className="flex items-center justify-between p-4 bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors"
       >
-        <div className="flex items-center flex-1">
+        <div
+          className="flex items-center flex-1 cursor-pointer"
+          onClick={() => onCall(contact)}
+        >
           <Avatar
             src={`/assets/avatars/${contact.avatar}`}
             alt={contact.name}
