@@ -75,12 +75,13 @@ CREATE TABLE call_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   caller_id INTEGER NOT NULL,
   callee_id INTEGER NOT NULL,
-  channel TEXT,
-  call_type TEXT CHECK(call_type IN ('audio', 'video')) DEFAULT 'audio',
-  direction TEXT CHECK(direction IN ('incoming', 'outgoing')) NOT NULL,
-  status TEXT CHECK(status IN ('completed', 'missed', 'failed')) DEFAULT 'completed',
+  called_name TEXT,
+  callee_phone TEXT,
   started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   ended_at DATETIME,
+  channel TEXT,
+  direction TEXT CHECK(direction IN ('incoming', 'outgoing')) NOT NULL,
+  status TEXT CHECK(status IN ('completed', 'missed', 'failed')) DEFAULT 'completed',
   duration INTEGER, -- seconds
   FOREIGN KEY (caller_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
   FOREIGN KEY (callee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE

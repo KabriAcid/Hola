@@ -47,8 +47,6 @@ export const MainApp: React.FC = () => {
 
   // Debug log (avoid logging secrets)
   useEffect(() => {
-    console.log("[DEBUG] AGORA_APP_ID:", AGORA_APP_ID || "<empty>");
-    console.log("[DEBUG] callChannel:", callChannel);
     if (user) console.log("[DEBUG] user UID:", user.phone);
   }, [AGORA_APP_ID, callChannel, user]);
 
@@ -234,7 +232,7 @@ export const MainApp: React.FC = () => {
 
     // Log the call in the database
     try {
-      await apiService.addCallLog(phone, name, "audio", channel);
+      await apiService.addCallLog(phone, name, channel);
       console.log("Call logged successfully");
     } catch (error) {
       console.error("Failed to log call:", error);

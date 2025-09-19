@@ -18,6 +18,49 @@ interface RecentCallsListProps {
   onMessage: (contactId: string) => void;
 }
 
+// iPhone-style call grouping: consecutive calls to/from same contact with same type get grouped
+const groupCallsLikeIPhone = (calls: CallLog[]): CallLog[] => {
+  if (calls.length === 0) return calls;
+
+  const grouped: CallLog[] = [];
+  let currentGroup: CallLog | null = null;
+  let groupCount = 1;
+
+  for (let i = 0; i < calls.length; i++) {
+    const call = calls[i];
+
+    if (
+      currentGroup &&
+      currentGroup.contactPhone === call.contactPhone &&
+      currentGroup.type === call.type &&
+      // Group if calls are within 1 hour of each other
+      Math.abs(currentGroup.timestamp.getTime() - call.timestamp.getTime()) <
+        60 * 60 * 1000
+    ) {
+      // Same contact, same type, within time window - increment count
+      groupCount++;
+      // Update the group with the most recent call's timestamp
+      if (call.timestamp > currentGroup.timestamp) {
+        currentGroup = { ...call, count: groupCount };
+      }
+    } else {
+      // Different contact or type or too far apart - push current group and start new one
+      if (currentGroup) {
+        grouped.push({ ...currentGroup, count: groupCount });
+      }
+      currentGroup = call;
+      groupCount = 1;
+    }
+  }
+
+  // Push the last group
+  if (currentGroup) {
+    grouped.push({ ...currentGroup, count: groupCount });
+  }
+
+  return grouped;
+};
+
 export const RecentCallsList: React.FC<RecentCallsListProps> = ({
   onCall,
   onMessage,
@@ -52,7 +95,10 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
           duration: item.duration,
           timestamp: new Date(item.timestamp), // Convert string to Date
         }));
-        setCallLogs(mapped);
+
+        // Group calls iPhone-style: consecutive calls to/from same contact with same type
+        const groupedCalls = groupCallsLikeIPhone(mapped);
+        setCallLogs(groupedCalls);
         setLoading(false);
       })
       .catch((err) => {
@@ -89,34 +135,25 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
-    const weeks = Math.floor(days / 7);
 
-    if (seconds < 30) {
+    // iPhone-style time formatting
+    if (seconds < 60) {
       return "Just now";
-    } else if (seconds < 60) {
-      return `${seconds} seconds ago`;
-    } else if (minutes === 1) {
-      return "1 minute ago";
     } else if (minutes < 60) {
-      return `${minutes} minutes ago`;
-    } else if (hours === 1) {
-      return "1 hour ago";
+      return `${minutes}m ago`;
     } else if (hours < 24) {
-      return `${hours} hours ago`;
+      return `${hours}h ago`;
     } else if (days === 1) {
       return "Yesterday";
     } else if (days < 7) {
-      return `${days} days ago`;
-    } else if (weeks === 1) {
-      return "1 week ago";
-    } else if (weeks < 4) {
-      return `${weeks} weeks ago`;
+      // Show day of week for recent days
+      return d.toLocaleDateString("en-US", { weekday: "long" });
     } else {
-      // For older dates, use MM/DD/YYYY format
+      // For older dates, show abbreviated format
       return d.toLocaleDateString("en-US", {
-        month: "numeric",
+        month: "short",
         day: "numeric",
-        year: "numeric",
+        year: now.getFullYear() !== d.getFullYear() ? "numeric" : undefined,
       });
     }
   };
@@ -178,7 +215,7 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                 onClick={() => setSelectedCall(call)}
               >
                 <Avatar
-                  src={call.contactAvatar}
+                  src={`/assets/avatars/${call.contactAvatar}`}
                   alt={call.contactName}
                   size="md"
                 />
@@ -192,6 +229,11 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                     >
                       {call.contactName}
                     </h3>
+                    {call.count && call.count > 1 && (
+                      <span className="ml-2 px-2 py-0.5 text-xs bg-gray-200 text-gray-700 rounded-full">
+                        ({call.count})
+                      </span>
+                    )}
                     {isMissed && (
                       <span className="ml-2 px-2 py-0.5 text-xs bg-red-200 text-red-800 rounded-full">
                         Missed
@@ -209,19 +251,42 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                   </div>
                 </div>
 
-                <button
-                  className={`p-2 flex items-center justify-center rounded-full transition-colors ${
-                    isMissed ? "hover:bg-red-200" : "hover:bg-gray-200"
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCall(call.contactPhone, call.contactName);
-                  }}
-                  aria-label="Call"
-                  type="button"
-                >
-                  {getCallIcon(call.type)}
-                </button>
+                <div className="relative">
+                  <button
+                    className={`p-2 flex items-center justify-center rounded-full transition-colors ${
+                      isMissed ? "hover:bg-red-200" : "hover:bg-gray-200"
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCall(call.contactPhone, call.contactName);
+                    }}
+                    aria-label="Call"
+                    type="button"
+                  >
+                    {getCallIcon(call.type)}
+                  </button>
+                  {call.count && call.count > 1 && (
+                    <div className="absolute -top-1 -right-1 flex">
+                      {Array.from({ length: Math.min(call.count - 1, 2) }).map(
+                        (_, i) => (
+                          <div
+                            key={i}
+                            className="w-3 h-3 rounded-full border border-white ml-[-2px]"
+                            style={{
+                              backgroundColor:
+                                call.type === "missed"
+                                  ? "#ef4444"
+                                  : call.type === "incoming"
+                                  ? "#10b981"
+                                  : "#3b82f6",
+                              zIndex: 10 - i,
+                            }}
+                          />
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
               </motion.div>
             );
           })
@@ -238,7 +303,7 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
           <div className="space-y-4">
             <div className="flex items-center space-x-3 mb-6">
               <Avatar
-                src={selectedCall.contactAvatar}
+                src={`/assets/avatars/${selectedCall.contactAvatar}`}
                 alt={selectedCall.contactName}
                 size="lg"
               />

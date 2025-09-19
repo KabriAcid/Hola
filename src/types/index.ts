@@ -27,6 +27,7 @@ export interface CallLog {
   type: "incoming" | "outgoing" | "missed";
   duration?: number;
   timestamp: Date;
+  count?: number; // For grouped calls (iPhone-style)
 }
 
 export interface Message {

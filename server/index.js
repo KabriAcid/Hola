@@ -704,7 +704,6 @@ app.post(
     const {
       calleePhone,
       calleeName,
-      callType = "audio",
       direction = "outgoing",
       channel,
     } = req.body;
@@ -718,33 +717,56 @@ app.post(
       calleePhone,
     ]);
 
+    // If no registered user found, create a temporary user for the call log
+    let calleeId = null;
+    if (!calleeUser) {
+      // Create a temporary/placeholder user entry for non-registered contacts
+      // This is a workaround for the NOT NULL constraint on callee_id
+      const tempUser = await dbGet(
+        "SELECT id FROM users WHERE phone = 'temp_non_registered' AND is_verified = 0"
+      );
+      if (!tempUser) {
+        // Create a placeholder user for non-registered contacts
+        const tempResult = await dbRun(
+          `INSERT INTO users (phone, name, username, is_verified, password) VALUES (?, ?, ?, 0, ?)`,
+          [
+            "temp_non_registered",
+            "Non-registered User",
+            "temp_user",
+            "temp_password",
+          ]
+        );
+        calleeId = tempResult.lastID;
+      } else {
+        calleeId = tempUser.id;
+      }
+    } else {
+      calleeId = calleeUser.id;
+    }
+
     // Use current timestamp with timezone adjustment for Nigeria (UTC+1)
     const nigerianTime = new Date(
       Date.now() + 1 * 60 * 60 * 1000
     ).toISOString();
 
-    // Insert call log - use NULL for callee_id if user not found
-    const insertSql = `INSERT INTO call_logs (caller_id, callee_id, channel, call_type, direction, status, started_at) 
-                       VALUES (?, ?, ?, ?, ?, 'completed', ?)`;
+    // Insert call log with actual callee_id (never NULL)
+    const insertSql = `INSERT INTO call_logs (caller_id, callee_id, channel, direction, status, started_at) 
+                       VALUES (?, ?, ?, ?, 'completed', ?)`;
 
     const result = await dbRun(insertSql, [
       req.user.id,
-      calleeUser ? calleeUser.id : null, // Allow NULL for non-registered users
+      calleeId,
       channel || null,
-      callType,
       direction,
       nigerianTime,
     ]);
 
-    // Return the created call log with contact info
+    // Return the created call log
     res.status(201).json({
       id: result.lastID,
       caller_id: req.user.id,
-      callee_id: calleeUser ? calleeUser.id : null,
-      callee_phone: calleePhone,
-      callee_name: calleeName || "Unknown",
+      callee_id: calleeId,
       channel: channel || null,
-      call_type: callType,
       direction: direction,
       status: "completed",
       started_at: nigerianTime,
@@ -765,7 +787,6 @@ app.get("/api/call-logs", authenticateJWT, async (req, res) => {
           cl.caller_id, 
           cl.callee_id, 
           cl.channel, 
-          cl.call_type, 
           cl.direction, 
           cl.status, 
           cl.started_at, 
@@ -802,32 +823,26 @@ app.get("/api/call-logs", authenticateJWT, async (req, res) => {
       );
     });
 
-    // For calls to non-registered users, get contact info from the user's contacts
+    // For calls to temporary/placeholder users, get actual contact info
     const enhancedRows = await Promise.all(
       rows.map(async (row) => {
+        // Check if this is a call to the temporary placeholder user
         if (
           row.caller_id === userId &&
-          (!row.callee_id || row.contact_name === "Unknown Contact")
+          (row.contact_phone === "temp_non_registered" ||
+            row.contact_name === "Non-registered User")
         ) {
-          // This is an outgoing call to a non-registered user or unknown contact
-          // Find contact info from user's contacts by phone number pattern matching
-          const contacts = await new Promise((resolve, reject) => {
-            db.all(
-              `SELECT name, phone, avatar FROM contacts 
+          // This is a call to a non-registered user, get the most recent contact info
+          // Since we can't store the actual phone in call_logs due to schema constraints,
+          // we'll get the most recently added contact as a best guess
+          const mostRecentContact = await dbGet(
+            `SELECT name, phone, avatar FROM contacts 
              WHERE owner_id = ? 
-             ORDER BY id DESC`,
-              [userId],
-              (err, contacts) => {
-                if (err) reject(err);
-                else resolve(contacts);
-              }
-            );
-          });
+             ORDER BY created_at DESC LIMIT 1`,
+            [userId]
+          );
 
-          // Since we don't have the exact phone in call_logs, we'll use the most recent contact
-          // In a future improvement, we should store the phone number in call_logs
-          if (contacts && contacts.length > 0) {
-            const mostRecentContact = contacts[0]; // Get the most recently added contact
+          if (mostRecentContact) {
             return {
               ...row,
               contact_name: mostRecentContact.name,
