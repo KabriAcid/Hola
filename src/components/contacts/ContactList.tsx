@@ -81,7 +81,7 @@ export const ContactList: React.FC<ContactListProps> = ({
           <div className="ml-3 flex-1">
             <div className="flex items-center">
               <h3 className="font-medium text-black">{contact.name}</h3>
-              {contact.isFavorite && (
+              {!!contact.isFavorite && (
                 <Star className="w-4 h-4 ml-2 text-yellow-500 fill-current" />
               )}
             </div>
@@ -170,15 +170,20 @@ export const ContactList: React.FC<ContactListProps> = ({
                     onClick={async () => {
                       setDropdownOpen(null);
                       try {
-                        const updatedContact = await apiService.toggleContactFavorite(
-                          contact.id,
-                          !contact.isFavorite
-                        );
+                        const updatedContact =
+                          await apiService.toggleContactFavorite(
+                            contact.id,
+                            !contact.isFavorite
+                          );
                         setContacts((prev) =>
-                          prev.map((c) => (c.id === contact.id ? updatedContact : c))
+                          prev.map((c) =>
+                            c.id === contact.id ? updatedContact : c
+                          )
                         );
                       } catch (err) {
-                        setError((err as Error).message || "Error toggling favorite");
+                        setError(
+                          (err as Error).message || "Error toggling favorite"
+                        );
                       }
                     }}
                   >
@@ -231,7 +236,7 @@ export const ContactList: React.FC<ContactListProps> = ({
     <div className="flex-1 overflow-y-auto">
       {loading ? (
         <div className="flex-1 flex items-center justify-center p-8">
-          <LoadingSpinner size="md"/>
+          <LoadingSpinner size="md" />
         </div>
       ) : error ? (
         <div className="flex-1 flex items-center justify-center p-8">
