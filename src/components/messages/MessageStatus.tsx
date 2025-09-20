@@ -47,7 +47,7 @@ const MessageStatus: React.FC<MessageStatusProps> = ({
         return {
           text: "Read",
           icon: "read",
-          color: "text-blue-500",
+          color: "text-black",
         };
       default:
         return {
@@ -165,7 +165,7 @@ export const MessageStatusIcon: React.FC<MessageStatusProps> = ({
       case "delivered":
         return { icon: "delivered", color: "text-gray-500" };
       case "read":
-        return { icon: "read", color: "text-blue-500" };
+        return { icon: "read", color: "text-black" };
       default:
         return { icon: "sending", color: "text-gray-400" };
     }

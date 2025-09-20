@@ -17,6 +17,49 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   showTimestamp = false,
   isGrouped = false,
 }) => {
+  // Track message sending timeout
+  const [showResend, setShowResend] = React.useState(false);
+  const [sendingTimeout, setSendingTimeout] =
+    React.useState<NodeJS.Timeout | null>(null);
+
+  React.useEffect(() => {
+    // Check if message is pending (no status entries or all are 'sent')
+    const isPending =
+      isOwn &&
+      (!message.status ||
+        message.status.length === 0 ||
+        !message.status.some(
+          (s) => s.status === "delivered" || s.status === "read"
+        ));
+
+    if (isPending) {
+      const timeout = setTimeout(() => {
+        setShowResend(true);
+      }, 40000); // 40 seconds
+      setSendingTimeout(timeout);
+    } else {
+      // Clear timeout if message is no longer pending
+      if (sendingTimeout) {
+        clearTimeout(sendingTimeout);
+        setSendingTimeout(null);
+      }
+      setShowResend(false);
+    }
+
+    return () => {
+      if (sendingTimeout) {
+        clearTimeout(sendingTimeout);
+      }
+    };
+  }, [message.status, isOwn, sendingTimeout]);
+
+  const handleResend = () => {
+    // Implement resend logic here
+    setShowResend(false);
+    // You can call a resend function passed as prop or emit a socket event
+    console.log("Resending message:", message.id);
+  };
+
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString("en-US", {
@@ -144,7 +187,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
+              <div className="w-full h-full bg-gray-600 flex items-center justify-center text-white text-xs font-medium">
                 {message.sender?.full_name?.charAt(0)?.toUpperCase() || "?"}
               </div>
             )}
@@ -157,7 +200,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             relative px-4 py-2 rounded-2xl max-w-full
             ${
               isOwn
-                ? "bg-blue-500 text-white rounded-br-md"
+                ? "bg-black text-white rounded-br-md"
                 : "bg-gray-200 text-gray-900 rounded-bl-md"
             }
             ${isGrouped ? (isOwn ? "rounded-tr-2xl" : "rounded-tl-2xl") : ""}
@@ -186,6 +229,27 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             </div>
           )}
 
+          {/* Time stamp in bottom right corner */}
+          <div className="flex items-center justify-end mt-1 space-x-1">
+            {/* Show resend button if timeout reached */}
+            {showResend && isOwn && (
+              <button
+                onClick={handleResend}
+                className="text-xs text-red-500 hover:text-red-600 mr-1"
+                title="Resend message"
+              >
+                Resend
+              </button>
+            )}
+            <span
+              className={`text-xs ${isOwn ? "text-gray-300" : "text-gray-500"}`}
+            >
+              {formatTime(message.created_at)}
+            </span>
+            {/* Message status for own messages */}
+            {isOwn && <MessageStatus message={message} />}
+          </div>
+
           {/* Timestamp on hover/tap */}
           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 opacity-0 hover:opacity-100 transition-opacity duration-200 pointer-events-none">
             <div className="bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
@@ -194,9 +258,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Message status */}
-      {isOwn && <MessageStatus message={message} />}
     </div>
   );
 };

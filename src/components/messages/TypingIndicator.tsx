@@ -44,7 +44,7 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
+              <div className="w-full h-full bg-gray-600 flex items-center justify-center text-white text-xs font-medium">
                 {user.full_name.charAt(0).toUpperCase()}
               </div>
             )}
