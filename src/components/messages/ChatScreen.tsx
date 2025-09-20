@@ -222,7 +222,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       {/* Messages Container */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto bg-gray-50"
+        className="flex-1 overflow-y-auto bg-white scrollbar-none"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         <div className="px-4 py-2">
           {processedMessages.map((message, index) => (

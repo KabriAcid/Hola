@@ -128,7 +128,7 @@ const ConversationHeader: React.FC<ConversationHeaderProps> = ({
               className="p-1 hover:bg-gray-100 rounded-full transition-colors duration-200"
             >
               <svg
-                className="w-6 h-6 text-gray-600"
+                className="w-6 h-6 text-black"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -158,7 +158,7 @@ const ConversationHeader: React.FC<ConversationHeaderProps> = ({
 
           {/* Name and status */}
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-semibold text-gray-900 truncate">
+            <h2 className="text-lg font-semibold text-black truncate">
               {getDisplayName()}
             </h2>
             <p className={`text-sm ${getStatusColor()} truncate`}>
@@ -177,7 +177,7 @@ const ConversationHeader: React.FC<ConversationHeaderProps> = ({
               title="Voice call"
             >
               <svg
-                className="w-5 h-5 text-gray-600"
+                className="w-5 h-5 text-black"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -200,7 +200,7 @@ const ConversationHeader: React.FC<ConversationHeaderProps> = ({
               title="Video call"
             >
               <svg
-                className="w-5 h-5 text-gray-600"
+                className="w-5 h-5 text-black"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -223,7 +223,7 @@ const ConversationHeader: React.FC<ConversationHeaderProps> = ({
               title="Conversation info"
             >
               <svg
-                className="w-5 h-5 text-gray-600"
+                className="w-5 h-5 text-black"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

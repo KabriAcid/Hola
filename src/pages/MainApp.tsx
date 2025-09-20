@@ -498,7 +498,10 @@ export const MainApp: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-white pb-16">
-      <Header title={getHeaderTitle()} {...getHeaderProps()} />
+      {/* Only show Header when not in a chat */}
+      {!selectedContactId && (
+        <Header title={getHeaderTitle()} {...getHeaderProps()} />
+      )}
 
       <div className="flex-1 overflow-y-auto pb-20 scrollbar-none">
         <AnimatePresence mode="wait">

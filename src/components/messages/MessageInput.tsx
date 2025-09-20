@@ -42,6 +42,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
+
+    // Limit to 10,000 characters
+    if (value.length > 10000) {
+      return;
+    }
+
     setMessage(value);
 
     // Handle typing indicators
@@ -129,30 +135,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
   }, []);
 
   return (
-    <div className="border-t bg-white p-4">
-      <form onSubmit={handleSubmit} className="flex items-end space-x-3">
-        {/* File upload button */}
-        <button
-          type="button"
-          onClick={triggerFileInput}
-          disabled={disabled}
-          className="flex-shrink-0 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-            />
-          </svg>
-        </button>
-
+    <div className="border-t bg-white px-4 py-3">
+      <form onSubmit={handleSubmit} className="relative">
         {/* Hidden file input */}
         <input
           ref={fileInputRef}
@@ -162,8 +146,31 @@ const MessageInput: React.FC<MessageInputProps> = ({
           className="hidden"
         />
 
-        {/* Message input container */}
-        <div className="flex-1 relative">
+        {/* Message input container with fixed icons */}
+        <div className="relative">
+          {/* File upload button - positioned absolute left */}
+          <button
+            type="button"
+            onClick={triggerFileInput}
+            disabled={disabled}
+            className="absolute left-3 bottom-2.5 z-10 p-1.5 text-gray-500 hover:text-black hover:bg-gray-100 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+              />
+            </svg>
+          </button>
+
+          {/* Textarea with padding for icons */}
           <textarea
             ref={textareaRef}
             value={message}
@@ -171,37 +178,46 @@ const MessageInput: React.FC<MessageInputProps> = ({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             disabled={disabled}
-            className="w-full px-4 py-2 border border-gray-300 rounded-full resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px] max-h-[120px]"
+            maxLength={10000}
+            className="w-full pl-12 pr-13 py-2.5 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px] max-h-[120px] overflow-y-auto scrollbar-none"
             rows={1}
+            style={{
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+            }}
           />
-        </div>
 
-        {/* Send button */}
-        <button
-          type="submit"
-          disabled={!message.trim() || disabled}
-          className="flex-shrink-0 p-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-full transition-colors duration-200 disabled:cursor-not-allowed"
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          {/* Send button - positioned absolute right */}
+          <button
+            type="submit"
+            disabled={!message.trim() || disabled}
+            className="absolute right-3 bottom-2.5 z-10 p-1.5 bg-black hover:bg-gray-800 disabled:bg-gray-300 text-white rounded-full transition-colors duration-200 disabled:cursor-not-allowed flex items-center justify-center"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-            />
-          </svg>
-        </button>
+            <svg
+              className="w-5 h-5 transform rotate-45"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+              />
+            </svg>
+          </button>
+        </div>
       </form>
 
-      {/* Character count (optional) */}
-      {message.length > 100 && (
-        <div className="mt-2 text-xs text-gray-500 text-right">
-          {message.length}/1000
+      {/* Character count */}
+      {message.length > 8000 && (
+        <div
+          className={`mt-2 text-xs text-right px-1 ${
+            message.length > 9500 ? "text-red-500" : "text-gray-500"
+          }`}
+        >
+          {message.length.toLocaleString()}/10,000
         </div>
       )}
     </div>
