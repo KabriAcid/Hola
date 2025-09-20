@@ -31,12 +31,14 @@ export const ContactForm: React.FC<ContactFormProps> = ({
     avatar: string;
     email: string;
     avatarFile?: File;
+    avatarPreview?: string; // For showing the preview without affecting the original avatar
   }>({
     name: contact?.name || "",
     phone: contact?.phone || "",
     avatar: contact?.avatar || "",
     email: contact?.email || "",
     avatarFile: undefined,
+    avatarPreview: undefined,
   });
 
   // Reset form when contact prop changes (for edit mode)
@@ -47,6 +49,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({
       avatar: contact?.avatar || "",
       email: contact?.email || "",
       avatarFile: undefined,
+      avatarPreview: undefined,
     });
   }, [contact, isOpen]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -131,12 +134,12 @@ export const ContactForm: React.FC<ContactFormProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       setFormData((prev) => ({ ...prev, avatarFile: file }));
-      // Optionally, show a preview using base64 for the Avatar component
+      // Show a preview using base64 for the Avatar component
       const reader = new FileReader();
       reader.onload = (ev) => {
         setFormData((prev) => ({
           ...prev,
-          avatar: ev.target?.result as string,
+          avatarPreview: ev.target?.result as string,
         }));
       };
       reader.readAsDataURL(file);
@@ -154,7 +157,11 @@ export const ContactForm: React.FC<ContactFormProps> = ({
         <div className="flex flex-col items-center">
           <div className="relative">
             <div onClick={handleAvatarClick} className="cursor-pointer">
-              <Avatar src={formData.avatar} alt={formData.name} size="xl" />
+              <Avatar
+                src={formData.avatarPreview || formData.avatar}
+                alt={formData.name}
+                size="xl"
+              />
             </div>
             <motion.button
               type="button"

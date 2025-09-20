@@ -8,6 +8,7 @@ import {
   Edit,
   Trash2,
   MoreVertical,
+  Search,
 } from "lucide-react";
 import { Contact } from "../../types";
 import { Avatar } from "../ui/Avatar";
@@ -41,6 +42,7 @@ export const ContactList: React.FC<ContactListProps> = ({
     top: number;
     left: number;
   } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -231,9 +233,23 @@ export const ContactList: React.FC<ContactListProps> = ({
     }
   };
 
-  // Split contacts into favorites and regular
-  const favorites = contacts.filter((c) => c.isFavorite);
-  const regular = contacts.filter((c) => !c.isFavorite);
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Filter contacts based on search query
+  const filteredContacts = searchQuery
+    ? contacts.filter(
+        (contact) =>
+          contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          contact.phone.includes(searchQuery)
+      )
+    : contacts;
+
+  // Split filtered contacts into favorites and regular
+  const favorites = filteredContacts.filter((c) => c.isFavorite);
+  const regular = filteredContacts.filter((c) => !c.isFavorite);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -247,6 +263,22 @@ export const ContactList: React.FC<ContactListProps> = ({
         </div>
       ) : (
         <>
+          {/* Search Field */}
+          <div className="px-4 py-3 border-b border-gray-200 bg-white">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder="Search contacts..."
+                className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-400 focus:outline-none focus:border-black text-sm"
+              />
+            </div>
+          </div>
+
           {favorites.length > 0 && (
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-black px-4 py-2 bg-gray-50">
@@ -271,27 +303,40 @@ export const ContactList: React.FC<ContactListProps> = ({
               ))}
             </div>
           )}
-          {contacts.length === 0 && (
+          {filteredContacts.length === 0 && (
             <div className="flex-1 flex items-center justify-center p-8">
               <div className="text-center">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Phone className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No contacts yet
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Add your first contact to get started
-                </p>
-                <button
-                  className="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium"
-                  onClick={() => {
-                    setError(null); // Clear any errors when opening modal
-                    setShowAddModal(true);
-                  }}
-                >
-                  Add Contact
-                </button>
+                {searchQuery ? (
+                  <>
+                    <h3 className="text-lg font-medium text-black mb-2">
+                      No results found
+                    </h3>
+                    <p className="text-gray-600">
+                      Try adjusting your search terms
+                    </p>
+                  </>
+                ) : contacts.length === 0 ? (
+                  <>
+                    <h3 className="text-lg font-medium text-black mb-2">
+                      No contacts yet
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Add your first contact to get started
+                    </p>
+                    <button
+                      className="inline-block px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                      onClick={() => {
+                        setError(null); // Clear any errors when opening modal
+                        setShowAddModal(true);
+                      }}
+                    >
+                      Add Contact
+                    </button>
+                  </>
+                ) : null}
               </div>
             </div>
           )}
