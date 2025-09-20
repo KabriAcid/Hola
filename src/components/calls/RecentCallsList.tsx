@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { CallLog } from "../../types";
 import { Avatar } from "../ui/Avatar";
-import { Modal } from "../ui/Modal";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 
 interface RecentCallsListProps {
@@ -119,7 +118,6 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
         setLoading(false);
       });
   }, []);
-  const [selectedCall, setSelectedCall] = React.useState<CallLog | null>(null);
 
   const getCallIcon = (type: CallLog["type"]) => {
     switch (type) {
@@ -297,7 +295,7 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                     ? "bg-red-50 hover:bg-red-100"
                     : "bg-white hover:bg-gray-50"
                 }`}
-                onClick={() => setSelectedCall(call)}
+                onClick={() => onCall(call.contactPhone, call.contactName)}
               >
                 <Avatar
                   src={`/assets/avatars/${call.contactAvatar}`}
@@ -336,24 +334,38 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                   </div>
                 </div>
 
-                <div className="relative">
+                <div className="flex items-center space-x-2">
                   <button
-                    className={`p-2 flex items-center justify-center rounded-full transition-colors ${
-                      isMissed ? "hover:bg-red-200" : "hover:bg-gray-200"
-                    }`}
+                    className="p-2 flex items-center justify-center rounded-full transition-colors hover:bg-gray-200"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onCall(call.contactPhone, call.contactName);
+                      onMessage(call.contactId);
                     }}
-                    aria-label="Call"
+                    aria-label="Message"
                     type="button"
                   >
-                    {getCallIcon(call.type)}
+                    <MessageCircle className="w-4 h-4 text-gray-600" />
                   </button>
-                  {call.count && call.count > 1 && (
-                    <div className="absolute -top-1 -right-1 flex">
-                      {Array.from({ length: Math.min(call.count - 1, 2) }).map(
-                        (_, i) => (
+
+                  <div className="relative">
+                    <button
+                      className={`p-2 flex items-center justify-center rounded-full transition-colors ${
+                        isMissed ? "hover:bg-red-200" : "hover:bg-gray-200"
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCall(call.contactPhone, call.contactName);
+                      }}
+                      aria-label="Call"
+                      type="button"
+                    >
+                      {getCallIcon(call.type)}
+                    </button>
+                    {call.count && call.count > 1 && (
+                      <div className="absolute -top-1 -right-1 flex">
+                        {Array.from({
+                          length: Math.min(call.count - 1, 2),
+                        }).map((_, i) => (
                           <div
                             key={i}
                             className="w-3 h-3 rounded-full border border-white ml-[-2px]"
@@ -367,66 +379,16 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                               zIndex: 10 - i,
                             }}
                           />
-                        )
-                      )}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             );
           })
         )}
       </div>
-
-      {/* Call Action Modal */}
-      <Modal
-        isOpen={!!selectedCall}
-        onClose={() => setSelectedCall(null)}
-        title="Contact Options"
-      >
-        {selectedCall && (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3 mb-6">
-              <Avatar
-                src={`/assets/avatars/${selectedCall.contactAvatar}`}
-                alt={selectedCall.contactName}
-                size="lg"
-              />
-              <div>
-                <h3 className="font-semibold text-lg">
-                  {selectedCall.contactName}
-                </h3>
-                <p className="text-gray-600">{selectedCall.contactPhone}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <motion.button
-                onClick={() => {
-                  onMessage(selectedCall.contactId);
-                  setSelectedCall(null);
-                }}
-                className="flex items-center justify-center space-x-2 p-4 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
-                whileTap={{ scale: 0.95 }}
-              >
-                <MessageCircle className="w-5 h-5" />
-                <span>Message</span>
-              </motion.button>
-              <motion.button
-                onClick={() => {
-                  onCall(selectedCall.contactPhone, selectedCall.contactName);
-                  setSelectedCall(null);
-                }}
-                className="flex items-center justify-center space-x-2 p-4 bg-primary text-white rounded-lg hover:bg-gray-900 transition-colors"
-                whileTap={{ scale: 0.95 }}
-              >
-                <Phone className="w-5 h-5" />
-                <span>Call</span>
-              </motion.button>
-            </div>
-          </div>
-        )}
-      </Modal>
     </>
   );
 };
