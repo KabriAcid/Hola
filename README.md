@@ -5,36 +5,42 @@ A modern, mobile-first audio calling application built with React, TypeScript, a
 ## 🚀 Features
 
 ### Authentication
+
 - **Multiple Login Methods**: Phone/password and Truecaller integration
 - **Registration Flow**: Complete signup with phone verification
 - **Persistent Sessions**: Auto-login with localStorage
 - **Real-time Validation**: Form validation with error handling
 
 ### Contacts Management
+
 - **Full CRUD Operations**: Add, edit, delete, and search contacts
 - **Avatar Support**: Upload and preview contact photos
 - **Favorites System**: Mark important contacts as favorites
 - **Online Status**: Visual indicators for contact availability
 
 ### Audio Calling
+
 - **Simulated Calls**: Complete in-call experience with controls
 - **Call Controls**: Mute, speaker, and end call functionality
 - **Call History**: Track incoming, outgoing, and missed calls
 - **Call Duration**: Timer and duration tracking
 
 ### Messaging
+
 - **SMS-style Chat**: Clean, modern messaging interface
 - **Real-time Updates**: Instant message delivery simulation
 - **Conversation Management**: Organized chat threads
 - **Unread Indicators**: Visual badges for new messages
 
 ### Navigation & UI
+
 - **Bottom Navigation**: Easy access to all main features
 - **Responsive Design**: Mobile-first, touch-friendly interface
 - **Smooth Animations**: Framer Motion powered transitions
 - **Accessibility**: High contrast, large tap targets
 
 ### Settings
+
 - **Profile Management**: Edit name, avatar, and personal info
 - **Preferences**: Notifications, dark mode toggle
 - **Privacy Options**: Security and privacy controls
@@ -53,17 +59,20 @@ A modern, mobile-first audio calling application built with React, TypeScript, a
 ## 📱 Design System
 
 ### Color Scheme
+
 - **Primary**: Pure black (#000000) for buttons and actions
 - **Secondary**: Pure white (#ffffff) for backgrounds
 - **Grays**: Carefully selected gray scale for text and borders
 - **Accents**: Minimal use of green for call actions, red for end calls
 
 ### Typography
+
 - **Font**: System font stack for optimal performance
 - **Weights**: Regular (400), Medium (500), Semibold (600), Bold (700)
 - **Sizes**: Responsive scale from 12px to 32px
 
 ### Spacing
+
 - **System**: 8px base unit for consistent spacing
 - **Components**: Standardized padding and margins
 - **Layout**: Proper use of whitespace for readability
@@ -71,23 +80,27 @@ A modern, mobile-first audio calling application built with React, TypeScript, a
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - npm or yarn
 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd hola-audio-call-app
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Start development server**
+
    ```bash
    npm run dev
    ```
@@ -98,6 +111,7 @@ A modern, mobile-first audio calling application built with React, TypeScript, a
 ### Demo Credentials
 
 For testing the login functionality:
+
 - **Phone**: +1234567890
 - **Password**: password
 
@@ -127,12 +141,14 @@ src/
 The app is designed for easy backend integration:
 
 ### API Service Layer
+
 - **Centralized API calls** in `src/services/api.ts`
 - **Mock data** easily replaceable with real endpoints
 - **Error handling** built into all service methods
 - **TypeScript interfaces** for all data structures
 
 ### Database Schema
+
 Ready for SQLite/PostgreSQL integration:
 
 ```sql
@@ -179,6 +195,7 @@ CREATE TABLE messages (
 ```
 
 ### Environment Variables
+
 Create a `.env` file for backend configuration:
 
 ```env
@@ -190,6 +207,7 @@ VITE_UPLOAD_ENDPOINT=/upload
 ## 🎨 Customization
 
 ### Theming
+
 Modify `tailwind.config.js` to customize colors, spacing, and animations:
 
 ```javascript
@@ -207,7 +225,9 @@ theme: {
 ```
 
 ### Components
+
 All components are modular and easily customizable:
+
 - **Button variants**: Primary, secondary, ghost
 - **Input types**: Text, password, tel with validation
 - **Modal system**: Backdrop blur, animations
@@ -231,17 +251,20 @@ All components are modular and easily customizable:
 ## 🚀 Deployment
 
 ### Build for Production
+
 ```bash
 npm run build
 ```
 
 ### Deploy to Vercel
+
 ```bash
 npm install -g vercel
 vercel --prod
 ```
 
 ### Deploy to Netlify
+
 ```bash
 npm run build
 # Upload dist/ folder to Netlify
@@ -271,4 +294,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Built with ❤️ for modern communication**
 
 ## Links
+
 https://netcatsolutions.ng/sip-trunk-service/?utm_source=chatgpt.com
