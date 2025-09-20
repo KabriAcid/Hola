@@ -100,7 +100,6 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
         return res.json();
       })
       .then((data) => {
-        console.log("Call logs API response:", data);
 
         // Ensure data is an array
         if (!Array.isArray(data)) {

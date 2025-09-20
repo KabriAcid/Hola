@@ -50,9 +50,31 @@ console.log("[BOOT] Environment check:", requiredEnvVars);
 
 // Common CORS configuration
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || "*",
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, postman, etc.)
+    if (!origin) return callback(null, true);
+
+    // Allow any localhost or ngrok domains
+    if (
+      origin.includes("localhost") ||
+      origin.includes("ngrok") ||
+      origin.includes("ngrok.io") ||
+      origin.includes("ngrok-free.app")
+    ) {
+      return callback(null, true);
+    }
+
+    // Allow specific frontend URL if set
+    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
+      return callback(null, true);
+    }
+
+    // Default fallback
+    callback(null, true);
+  },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 app.use(cors(corsOptions));

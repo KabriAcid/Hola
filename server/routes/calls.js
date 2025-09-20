@@ -1,5 +1,5 @@
 const express = require("express");
-const { body, param } = require("express-validator");
+const { body, param, query } = require("express-validator");
 const xss = require("xss");
 
 const { dbGet, dbAll, dbRun, dbPaginate } = require("../database");
@@ -180,6 +180,129 @@ router.get(
   })
 );
 
+// ============================================================================
+// AGORA TOKEN GENERATION (Must be before /:id route)
+// ============================================================================
+
+/**
+ * GET /api/agora-config
+ * Get Agora configuration info (for debugging)
+ */
+router.get(
+  "/agora-config",
+  authenticateJWT,
+  asyncHandler(async (req, res) => {
+    const appId = process.env.AGORA_APP_ID;
+    const appCertificate = process.env.AGORA_APP_CERTIFICATE;
+
+    res.json({
+      hasAppId: !!appId,
+      hasAppCertificate: !!appCertificate,
+      appIdPreview: appId ? appId.substring(0, 8) + "***" : null,
+      appCertificatePreview: appCertificate
+        ? appCertificate.substring(0, 8) + "***"
+        : null,
+      timestamp: new Date().toISOString(),
+    });
+  })
+);
+
+/**
+ * GET /api/agora-token
+ * Generate Agora RTC token for voice calls
+ */
+router.get(
+  "/agora-token",
+  authenticateJWT,
+  [
+    // Add explicit validation for query parameters
+    query("channel")
+      .trim()
+      .notEmpty()
+      .withMessage("Channel is required")
+      .matches(/^call_\d+_\d+_\d+$/)
+      .withMessage(
+        "Invalid channel format. Expected: call_phone1_phone2_timestamp"
+      ),
+    query("uid")
+      .trim()
+      .notEmpty()
+      .withMessage("UID is required")
+      .isLength({ min: 1, max: 255 })
+      .withMessage("UID must be 1-255 characters for string UID")
+      .matches(/^0?\d{10,14}$/)
+      .withMessage(
+        "Invalid UID format. Expected: 10-15 digit phone number (with optional leading zero)"
+      ),
+  ],
+  validateRequest,
+  asyncHandler(async (req, res) => {
+    const { channel, uid } = req.query;
+
+    console.log(
+      `[AGORA] Token request - Channel: ${channel}, UID: ${uid}, User: ${req.user?.phone}`
+    );
+
+    const appId = process.env.AGORA_APP_ID;
+    const appCertificate = process.env.AGORA_APP_CERTIFICATE;
+
+    if (!appId || !appCertificate) {
+      console.error("Missing Agora credentials:", {
+        appId: !!appId,
+        appCertificate: !!appCertificate,
+      });
+      return sendError(res, 500, "Agora service not configured");
+    }
+
+    try {
+      const role = RtcRole.PUBLISHER;
+      const expirationTimeInSeconds = 3600; // 1 hour
+      const currentTimestamp = Math.floor(Date.now() / 1000);
+      const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
+
+      console.log("[AGORA] Token generation parameters:", {
+        appId: appId?.substring(0, 8) + "***",
+        appCertificate: appCertificate?.substring(0, 8) + "***",
+        channel: channel.trim(),
+        uid: uid.trim(), // Use string UID
+        role,
+        privilegeExpiredTs,
+        currentTimestamp,
+      });
+
+      // Generate token with string UID (phone number)
+      const token = RtcTokenBuilder.buildTokenWithAccount(
+        appId,
+        appCertificate,
+        channel.trim(),
+        uid.trim(), // Use string UID
+        role,
+        privilegeExpiredTs
+      );
+
+      console.log(
+        `[AGORA] Token generated successfully for channel: ${channel}, uid: ${uid}`
+      );
+
+      res.json({
+        token,
+        appId,
+        channel: channel.trim(),
+        uid: uid.trim(), // Return string UID to match token generation
+        expiresAt: privilegeExpiredTs,
+        role: "publisher",
+      });
+    } catch (error) {
+      console.error("Agora token generation error:", error);
+      return sendError(res, 500, "Failed to generate Agora token");
+    }
+  })
+);
+
+// ============================================================================
+// CALL LOG ROUTES
+// ============================================================================
+
 /**
  * GET /api/calls/:id
  * Get a specific call log
@@ -288,7 +411,13 @@ router.post(
     const channel = req.body.channel ? xss(req.body.channel.trim()) : null;
     const status = req.body.status || "received";
 
-    // Find receiver user by phone
+    // First check if this phone number exists in the caller's contacts
+    const contactEntry = await dbGet(
+      "SELECT contact_user_id, name, avatar FROM contacts WHERE owner_id = ? AND phone = ?",
+      [req.user.id, calleePhone]
+    );
+
+    // Then find receiver user by phone
     const receiverUser = await dbGet(
       "SELECT id, name, avatar FROM users WHERE phone = ? AND is_verified = TRUE",
       [calleePhone]
@@ -298,7 +427,14 @@ router.post(
     let receiverName = calleeName;
     let receiverAvatar = "default.png";
 
-    if (receiverUser) {
+    if (contactEntry) {
+      // Use contact information if available (prioritize contact's custom name and avatar)
+      receiverId =
+        contactEntry.contact_user_id || (receiverUser ? receiverUser.id : null);
+      receiverName = contactEntry.name || calleeName;
+      receiverAvatar = contactEntry.avatar || "default.png";
+    } else if (receiverUser) {
+      // Fall back to user information if no contact entry
       receiverId = receiverUser.id;
       receiverName = receiverUser.name || calleeName;
       receiverAvatar = receiverUser.avatar || "default.png";
@@ -516,74 +652,6 @@ router.get(
         totalDuration: stats.total_duration || 0,
       },
     });
-  })
-);
-
-// ============================================================================
-// AGORA TOKEN GENERATION
-// ============================================================================
-
-/**
- * GET /api/agora-token
- * Generate Agora RTC token for voice calls
- */
-router.get(
-  "/agora-token",
-  authenticateJWT,
-  asyncHandler(async (req, res) => {
-    const { channel, uid } = req.query;
-
-    console.log(
-      `[AGORA] Token request - Channel: ${channel}, UID: ${uid}, User: ${req.user?.phone}`
-    );
-
-    if (!channel || !uid) {
-      return sendError(res, 400, "Channel and UID are required");
-    }
-
-    const appId = process.env.AGORA_APP_ID;
-    const appCertificate = process.env.AGORA_APP_CERTIFICATE;
-
-    if (!appId || !appCertificate) {
-      console.error("Missing Agora credentials:", {
-        appId: !!appId,
-        appCertificate: !!appCertificate,
-      });
-      return sendError(res, 500, "Agora service not configured");
-    }
-
-    try {
-      const role = RtcRole.PUBLISHER;
-      const expirationTimeInSeconds = 3600; // 1 hour
-      const currentTimestamp = Math.floor(Date.now() / 1000);
-      const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
-
-      // Generate token
-      const token = RtcTokenBuilder.buildTokenWithUid(
-        appId,
-        appCertificate,
-        channel,
-        parseInt(uid) || 0,
-        role,
-        privilegeExpiredTs
-      );
-
-      console.log(
-        `[AGORA] Token generated for channel: ${channel}, uid: ${uid}`
-      );
-
-      res.json({
-        token,
-        appId,
-        channel,
-        uid,
-        expiresAt: privilegeExpiredTs,
-        role: "publisher",
-      });
-    } catch (error) {
-      console.error("Agora token generation error:", error);
-      return sendError(res, 500, "Failed to generate Agora token");
-    }
   })
 );
 

@@ -35,10 +35,14 @@ interface LegacyMessage {
   message_type?: string;
 }
 import { useAgoraAudio } from "../hooks/useAgoraAudio";
+import { CallDebugInfo } from "../components/debug/CallDebugInfo";
 
 export const MainApp: React.FC = () => {
   // Track if call is answered (for CallScreen)
   const [isCallAnswered, setIsCallAnswered] = useState(false);
+
+  // Debug modal state
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   // Store channel for Agora (if needed)
   const [callChannel, setCallChannel] = useState<string | null>(null);
 
@@ -110,8 +114,20 @@ export const MainApp: React.FC = () => {
     appId: AGORA_APP_ID,
     channel: callChannel || "",
     token: agoraToken,
-    uid: user?.phone,
+    uid: user?.phone || "", // Use string UID (phone number)
   });
+
+  // Debug Agora configuration
+  useEffect(() => {
+    if (callChannel && agoraToken) {
+      console.log("[DEBUG] Agora Configuration:", {
+        appId: AGORA_APP_ID?.substring(0, 8) + "***",
+        channel: callChannel,
+        uid: user?.phone || "", // String UID
+        hasToken: !!agoraToken,
+      });
+    }
+  }, [AGORA_APP_ID, callChannel, agoraToken, user?.phone]);
 
   // Contacts state is now fetched from backend
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -222,6 +238,19 @@ export const MainApp: React.FC = () => {
     };
     // eslint-disable-next-line
   }, [user, contacts, startCall, endCall]);
+
+  // Keyboard shortcut for debug info (Ctrl+Shift+D)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.key === "D") {
+        event.preventDefault();
+        setShowDebugInfo(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -708,6 +737,24 @@ export const MainApp: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Debug floating button (only show on mobile or when needed) */}
+      {(navigator.userAgent.includes("Mobile") ||
+        window.location.search.includes("debug")) && (
+        <button
+          onClick={() => setShowDebugInfo(true)}
+          className="fixed bottom-20 right-4 bg-blue-500 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center z-40 hover:bg-blue-600 transition-colors"
+          title="Call Debug Info"
+        >
+          🔧
+        </button>
+      )}
+
+      {/* Debug Info Modal */}
+      <CallDebugInfo
+        show={showDebugInfo}
+        onClose={() => setShowDebugInfo(false)}
+      />
     </div>
   );
 };

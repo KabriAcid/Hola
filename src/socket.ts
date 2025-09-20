@@ -1,4 +1,3 @@
-// src/socket.ts
 // Socket.io client singleton for Hola app
 import { io, Socket } from "socket.io-client";
 
@@ -17,18 +16,48 @@ class SocketService {
       return;
     }
 
+    console.log("[SOCKET] Attempting to connect to:", SOCKET_URL);
+
     this.socket = io(SOCKET_URL, {
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"], // Try polling first for ngrok
+      timeout: 30000, // Increase timeout for ngrok
+      forceNew: true,
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      // Add ngrok-specific headers
+      extraHeaders: {
+        "ngrok-skip-browser-warning": "true",
+      },
+      // For ngrok compatibility
+      upgrade: true,
+      rememberUpgrade: false,
     });
 
     this.socket.on("connect", () => {
-      console.log("Socket connected:", this.socket?.id);
+      console.log("[SOCKET] ✅ Connected successfully:", this.socket?.id);
+      console.log("[SOCKET] Transport:", this.socket?.io.engine.transport.name);
       // Register user with their phone number
       this.socket?.emit("register", userPhone);
+      console.log("[SOCKET] Registered user:", userPhone);
     });
 
-    this.socket.on("disconnect", () => {
-      console.log("Socket disconnected");
+    this.socket.on("connect_error", (error) => {
+      console.error("[SOCKET] ❌ Connection error:", error);
+      console.error("[SOCKET] Error details:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+      });
+      console.error("[SOCKET] Attempting to connect to:", SOCKET_URL);
+      console.error(
+        "[SOCKET] Make sure your server is running on port 5000 and ngrok is active"
+      );
+    });
+
+    this.socket.on("disconnect", (reason) => {
+      console.log("[SOCKET] ❌ Disconnected:", reason);
     });
 
     // Listen for new messages

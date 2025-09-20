@@ -166,6 +166,15 @@ function validateRequest(req, res, next) {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
+    console.error("[VALIDATION ERROR]", {
+      path: req.path,
+      method: req.method,
+      query: req.query,
+      body: req.body,
+      params: req.params,
+      errors: errors.array(),
+      timestamp: new Date().toISOString(),
+    });
     return sendError(res, 400, "Validation failed", errors.array());
   }
 
