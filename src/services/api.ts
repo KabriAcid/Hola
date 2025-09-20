@@ -346,8 +346,9 @@ export const apiService = {
         console.warn("Messages API not available, using mock data");
         await delay(500);
         // Check both contactId and conversationId for backward compatibility
-        return mockMessages.filter((m: any) => 
-          m.contactId === identifier || m.conversationId === identifier
+        return mockMessages.filter(
+          (m: any) =>
+            m.contactId === identifier || m.conversationId === identifier
         );
       }
       return await res.json();
@@ -355,16 +356,21 @@ export const apiService = {
       console.warn("Failed to fetch messages, using mock data:", error);
       await delay(500);
       // Check both contactId and conversationId for backward compatibility
-      return mockMessages.filter((m: any) => 
-        m.contactId === identifier || m.conversationId === identifier
+      return mockMessages.filter(
+        (m: any) =>
+          m.contactId === identifier || m.conversationId === identifier
       );
     }
   },
 
-  async sendMessage(contactId: string, content: string, messageType: 'text' | 'image' | 'audio' | 'file' = 'text'): Promise<Message> {
+  async sendMessage(
+    identifier: string,
+    content: string,
+    messageType: "text" | "image" | "audio" | "file" = "text"
+  ): Promise<Message> {
     const token = this.getToken();
     try {
-      const res = await fetch(`/api/conversations/${contactId}/messages`, {
+      const res = await fetch(`/api/conversations/${identifier}/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -381,16 +387,23 @@ export const apiService = {
       return await res.json();
     } catch (error) {
       console.warn("Failed to send message via API, using fallback:", error);
-      // Fallback to old format
+      // Fallback to old format for backward compatibility
       await delay(300);
-      return {
+      const newMessage = {
         id: `msg_${Date.now()}`,
-        contactId,
         content,
         timestamp: new Date(),
         isOutgoing: true,
         isRead: true,
-      } as any;
+        message_type: messageType,
+        // Support both old and new formats
+        contactId: identifier,
+        conversationId: identifier,
+        created_at: new Date().toISOString(),
+        sender_id: 1,
+        status: "sent" as const,
+      };
+      return newMessage as any;
     }
   },
 
@@ -415,30 +428,34 @@ export const apiService = {
     } catch (error) {
       console.warn("Failed to create conversation via API:", error);
       // Create a mock conversation
-      const contact = await this.getContacts().then(contacts => 
-        contacts.find(c => c.id === contactId)
+      const contact = await this.getContacts().then((contacts) =>
+        contacts.find((c) => c.id === contactId)
       );
       return {
         id: parseInt(contactId),
-        type: 'direct',
-        participants: contact ? [{
-          id: 1,
-          conversation_id: parseInt(contactId),
-          user_id: parseInt(contact.id),
-          joined_at: new Date().toISOString(),
-          role: 'member',
-          is_muted: false,
-          user: {
-            id: parseInt(contact.id),
-            full_name: contact.name,
-            avatar: contact.avatar,
-            status: contact.isOnline ? 'online' : 'offline'
-          }
-        }] : [],
+        type: "direct",
+        participants: contact
+          ? [
+              {
+                id: 1,
+                conversation_id: parseInt(contactId),
+                user_id: parseInt(contact.id),
+                joined_at: new Date().toISOString(),
+                role: "member",
+                is_muted: false,
+                user: {
+                  id: parseInt(contact.id),
+                  full_name: contact.name,
+                  avatar: contact.avatar,
+                  status: contact.isOnline ? "online" : "offline",
+                },
+              },
+            ]
+          : [],
         created_by: 1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        last_message_at: new Date().toISOString()
+        last_message_at: new Date().toISOString(),
       };
     }
   },

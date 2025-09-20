@@ -53,32 +53,37 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         type: conversation.type,
         name: conversation.name,
         avatar: conversation.avatar,
-        participants: conversation.participants?.map(p => ({
-          id: p.user_id,
-          full_name: p.user?.full_name || 'Unknown',
-          avatar: p.user?.avatar,
-          status: p.user?.status,
-          last_seen: p.user?.last_seen
-        })) || []
+        participants:
+          conversation.participants?.map((p) => ({
+            id: p.user_id,
+            full_name: p.user?.full_name || "Unknown",
+            avatar: p.user?.avatar,
+            status: p.user?.status,
+            last_seen: p.user?.last_seen,
+          })) || [],
       };
     }
-    
+
     if (contact) {
       return {
         id: 0, // Temporary ID for contact-based chat
-        type: 'direct' as const,
+        type: "direct" as const,
         name: contact.name,
         avatar: contact.avatar,
-        participants: [{
-          id: Number(contact.id),
-          full_name: contact.name,
-          avatar: contact.avatar,
-          status: contact.isOnline ? 'online' as const : 'offline' as const,
-          last_seen: undefined
-        }]
+        participants: [
+          {
+            id: Number(contact.id),
+            full_name: contact.name,
+            avatar: contact.avatar,
+            status: contact.isOnline
+              ? ("online" as const)
+              : ("offline" as const),
+            last_seen: undefined,
+          },
+        ],
       };
     }
-    
+
     return null;
   }, [contact, conversation]);
 
@@ -115,18 +120,25 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         // New format
         return {
           ...msg,
-          is_own: msg.sender_id === Number(user?.id) || msg.is_own || false
+          is_own: msg.sender_id === Number(user?.id) || msg.is_own || false,
         };
       } else {
         // Old format - convert to new format
         return {
-          id: typeof msg.id === 'string' ? parseInt(msg.id.replace('msg_', '')) || Date.now() : msg.id || Date.now(),
+          id:
+            typeof msg.id === "string"
+              ? parseInt(msg.id.replace("msg_", "")) || Date.now()
+              : msg.id || Date.now(),
           conversation_id: 0,
-          sender_id: msg.isOutgoing ? Number(user?.id) || 0 : Number(contact?.id) || 0,
-          content: msg.content || '',
-          message_type: 'text' as const,
-          created_at: msg.timestamp ? msg.timestamp.toISOString() : new Date().toISOString(),
-          is_own: msg.isOutgoing || false
+          sender_id: msg.isOutgoing
+            ? Number(user?.id) || 0
+            : Number(contact?.id) || 0,
+          content: msg.content || "",
+          message_type: "text" as const,
+          created_at: msg.timestamp
+            ? msg.timestamp.toISOString()
+            : new Date().toISOString(),
+          is_own: msg.isOutgoing || false,
         };
       }
     });
@@ -137,7 +149,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     if (onMarkAsRead && processedMessages.length > 0) {
       const unreadMessages = processedMessages.filter(
         (msg: any) =>
-          !msg.is_own && (!msg.status || msg.status.every((status: any) => status.status !== "read"))
+          !msg.is_own &&
+          (!msg.status ||
+            msg.status.every((status: any) => status.status !== "read"))
       );
 
       unreadMessages.forEach((message: any) => {
