@@ -1,13 +1,14 @@
 -- ========================================
 -- HOLA APP - MYSQL DATABASE SCHEMA
 -- Migrated from SQLite to MySQL
+-- Foreign keys ordered for proper execution sequence
 -- ========================================
 
 -- ========================================
--- CORE USER MANAGEMENT
+-- CORE TABLES (No foreign key dependencies)
 -- ========================================
 
--- Users table with enhanced profile and presence
+-- Users table with enhanced profile and presence (BASE TABLE - NO DEPENDENCIES)
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   phone VARCHAR(20) UNIQUE NOT NULL,
@@ -19,7 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
   country VARCHAR(100),
   city VARCHAR(100),
   password VARCHAR(255),
-  is_verified BOOLEAN DEFAULT FALSE,
+  is_verified TINYINT DEFAULT 0 COMMENT '0=false, 1=true',
   truecaller_id VARCHAR(100) UNIQUE,
   -- Presence fields
   status ENUM('online', 'offline', 'away', 'busy') DEFAULT 'offline',
@@ -32,23 +33,9 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- User contacts with enhanced relationship tracking
-CREATE TABLE IF NOT EXISTS contacts (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  owner_id INT NOT NULL,
-  contact_user_id INT,
-  name VARCHAR(255) NOT NULL,
-  phone VARCHAR(20) NOT NULL,
-  email VARCHAR(255),
-  avatar TEXT,
-  label VARCHAR(100),
-  is_favorite BOOLEAN DEFAULT FALSE,
-  notes TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (contact_user_id) REFERENCES users(id) ON DELETE SET NULL
-);
+-- ========================================
+-- LEVEL 1 TABLES (Depend only on users)
+-- ========================================
 
 -- Phone verification system
 CREATE TABLE IF NOT EXISTS verification_codes (
@@ -56,7 +43,7 @@ CREATE TABLE IF NOT EXISTS verification_codes (
   user_id INT NOT NULL,
   code VARCHAR(10) NOT NULL,
   expires_at DATETIME NOT NULL,
-  used BOOLEAN DEFAULT FALSE,
+  used TINYINT DEFAULT 0 COMMENT '0=false, 1=true',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -75,17 +62,31 @@ CREATE TABLE IF NOT EXISTS devices (
 -- User settings and preferences
 CREATE TABLE IF NOT EXISTS settings (
   user_id INT PRIMARY KEY,
-  notifications_enabled BOOLEAN DEFAULT TRUE,
-  dark_mode BOOLEAN DEFAULT FALSE,
+  notifications_enabled TINYINT DEFAULT 1 COMMENT '0=false, 1=true',
+  dark_mode TINYINT DEFAULT 0 COMMENT '0=false, 1=true',
   language VARCHAR(10) DEFAULT 'en',
   ringtone VARCHAR(255),
   privacy_last_seen ENUM('everyone', 'contacts', 'nobody') DEFAULT 'everyone',
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- ========================================
--- VOICE CALL SYSTEM
--- ========================================
+-- User contacts with enhanced relationship tracking
+CREATE TABLE IF NOT EXISTS contacts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  owner_id INT NOT NULL,
+  contact_user_id INT,
+  name VARCHAR(255) NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  email VARCHAR(255),
+  avatar TEXT,
+  label VARCHAR(100),
+  is_favorite TINYINT DEFAULT 0 COMMENT '0=false, 1=true',
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (contact_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
 
 -- Enhanced call logs with detailed tracking
 CREATE TABLE IF NOT EXISTS call_logs (
@@ -105,10 +106,6 @@ CREATE TABLE IF NOT EXISTS call_logs (
   FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- ========================================
--- MESSAGING SYSTEM (iMessage-style)
--- ========================================
-
 -- Conversation threads (direct and group chats)
 CREATE TABLE IF NOT EXISTS conversations (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -122,20 +119,9 @@ CREATE TABLE IF NOT EXISTS conversations (
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Track participants in conversations
-CREATE TABLE IF NOT EXISTS conversation_participants (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  conversation_id INT NOT NULL,
-  user_id INT NOT NULL,
-  joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  role ENUM('member', 'admin') DEFAULT 'member',
-  is_muted BOOLEAN DEFAULT FALSE,
-  last_read_message_id INT,
-  FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (last_read_message_id) REFERENCES messages(id) ON DELETE SET NULL,
-  UNIQUE(conversation_id, user_id)
-);
+-- ========================================
+-- LEVEL 2 TABLES (Depend on conversations)
+-- ========================================
 
 -- Rich messages with media support
 CREATE TABLE IF NOT EXISTS messages (
@@ -154,6 +140,25 @@ CREATE TABLE IF NOT EXISTS messages (
   FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
   FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (reply_to_message_id) REFERENCES messages(id) ON DELETE SET NULL
+);
+
+-- ========================================
+-- LEVEL 3 TABLES (Depend on messages - must come after messages table)
+-- ========================================
+
+-- Track participants in conversations (references messages for last_read_message_id)
+CREATE TABLE IF NOT EXISTS conversation_participants (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  conversation_id INT NOT NULL,
+  user_id INT NOT NULL,
+  joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  role ENUM('member', 'admin') DEFAULT 'member',
+  is_muted TINYINT DEFAULT 0 COMMENT '0=false, 1=true',
+  last_read_message_id INT,
+  FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (last_read_message_id) REFERENCES messages(id) ON DELETE SET NULL,
+  UNIQUE(conversation_id, user_id)
 );
 
 -- Message delivery and read status tracking

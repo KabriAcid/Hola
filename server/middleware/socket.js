@@ -8,7 +8,10 @@ const userSockets = {};
 
 function socketHandler(io) {
   io.on("connection", (socket) => {
-    console.log(`[SOCKET] New connection: ${socket.id}`);
+    // Only log in development for debugging
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[SOCKET] New connection: ${socket.id}`);
+    }
 
     // ========================================
     // USER REGISTRATION
