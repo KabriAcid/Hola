@@ -758,7 +758,7 @@ app.post(
       calleePhone,
       channel || null,
       direction,
-      nigerianTime,
+      timestamp,
     ]);
 
     // Return the created call log
