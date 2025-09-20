@@ -253,12 +253,93 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           {/* Show message status when sending */}
           {!showResend && (
             <>
-              {/* Check if message is delivered/read to show copy icon */}
+              {/* Check if message is delivered/read to show edit and copy icons */}
               {message.status &&
                 message.status.some(
                   (s) => s.status === "delivered" || s.status === "read"
                 ) &&
                 message.message_type === "text" && (
+                  <>
+                    {/* Edit icon */}
+                    <button
+                      onClick={() => {
+                        // TODO: Implement edit functionality
+                        console.log("Edit message:", message.id);
+                      }}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Edit message"
+                    >
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
+                      </svg>
+                    </button>
+                    {/* Copy icon */}
+                    <button
+                      onClick={() =>
+                        navigator.clipboard.writeText(message.content || "")
+                      }
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Copy message"
+                    >
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </button>
+                  </>
+                )}
+              <MessageStatus message={message} />
+            </>
+          )}
+
+          {/* Show edit + copy + resend when timeout reached */}
+          {showResend && (
+            <>
+              {message.message_type === "text" && (
+                <>
+                  {/* Edit icon */}
+                  <button
+                    onClick={() => {
+                      // TODO: Implement edit functionality
+                      console.log("Edit message:", message.id);
+                    }}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Edit message"
+                  >
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                      />
+                    </svg>
+                  </button>
+                  {/* Copy icon */}
                   <button
                     onClick={() =>
                       navigator.clipboard.writeText(message.content || "")
@@ -280,36 +361,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                       />
                     </svg>
                   </button>
-                )}
-              <MessageStatus message={message} />
-            </>
-          )}
-
-          {/* Show copy + resend when timeout reached */}
-          {showResend && (
-            <>
-              {message.message_type === "text" && (
-                <button
-                  onClick={() =>
-                    navigator.clipboard.writeText(message.content || "")
-                  }
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                  title="Copy message"
-                >
-                  <svg
-                    className="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                  </svg>
-                </button>
+                </>
               )}
               <button
                 onClick={handleResend}
