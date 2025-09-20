@@ -200,7 +200,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             relative px-4 py-2 rounded-2xl max-w-full
             ${
               isOwn
-                ? "bg-black text-white rounded-br-md"
+                ? "bg-white text-black rounded-br-md shadow-md"
                 : "bg-gray-200 text-gray-900 rounded-bl-md"
             }
             ${isGrouped ? (isOwn ? "rounded-tr-2xl" : "rounded-tl-2xl") : ""}
@@ -230,24 +230,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           )}
 
           {/* Time stamp in bottom right corner */}
-          <div className="flex items-center justify-end mt-1 space-x-1">
-            {/* Show resend button if timeout reached */}
-            {showResend && isOwn && (
-              <button
-                onClick={handleResend}
-                className="text-xs text-red-500 hover:text-red-600 mr-1"
-                title="Resend message"
-              >
-                Resend
-              </button>
-            )}
+          <div className="flex items-center justify-end mt-1">
             <span
-              className={`text-xs ${isOwn ? "text-gray-300" : "text-gray-500"}`}
+              className={`text-xs ${isOwn ? "text-gray-500" : "text-gray-500"}`}
             >
               {formatTime(message.created_at)}
             </span>
-            {/* Message status for own messages */}
-            {isOwn && <MessageStatus message={message} />}
           </div>
 
           {/* Timestamp on hover/tap */}
@@ -258,6 +246,82 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         </div>
       </div>
+
+      {/* External actions container for own messages */}
+      {isOwn && (
+        <div className="flex justify-end items-center mt-1 mr-2 space-x-2">
+          {/* Show message status when sending */}
+          {!showResend && (
+            <>
+              {/* Check if message is delivered/read to show copy icon */}
+              {message.status &&
+                message.status.some(
+                  (s) => s.status === "delivered" || s.status === "read"
+                ) &&
+                message.message_type === "text" && (
+                  <button
+                    onClick={() =>
+                      navigator.clipboard.writeText(message.content || "")
+                    }
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Copy message"
+                  >
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </button>
+                )}
+              <MessageStatus message={message} />
+            </>
+          )}
+
+          {/* Show copy + resend when timeout reached */}
+          {showResend && (
+            <>
+              {message.message_type === "text" && (
+                <button
+                  onClick={() =>
+                    navigator.clipboard.writeText(message.content || "")
+                  }
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Copy message"
+                >
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                </button>
+              )}
+              <button
+                onClick={handleResend}
+                className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                title="Resend message"
+              >
+                Resend
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };
