@@ -153,10 +153,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
             type="button"
             onClick={triggerFileInput}
             disabled={disabled}
-            className="absolute left-3 bottom-2.5 z-10 p-1.5 text-gray-500 hover:text-black hover:bg-gray-100 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="absolute left-3 bottom-2.5 z-10 w-8 h-8 text-gray-500 hover:text-black hover:bg-gray-100 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             <svg
-              className="w-5 h-5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -191,10 +191,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
           <button
             type="submit"
             disabled={!message.trim() || disabled}
-            className="absolute right-3 bottom-2.5 z-10 p-1.5 bg-black hover:bg-gray-800 disabled:bg-gray-300 text-white rounded-full transition-colors duration-200 disabled:cursor-not-allowed flex items-center justify-center"
+            className="absolute right-3 bottom-2.5 z-10 w-8 h-8 bg-black hover:bg-gray-800 disabled:bg-gray-300 text-white rounded-full transition-colors duration-200 disabled:cursor-not-allowed flex items-center justify-center"
           >
             <svg
-              className="w-5 h-5 transform rotate-45"
+              className="w-4 h-4 transform rotate-45"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -211,10 +211,16 @@ const MessageInput: React.FC<MessageInputProps> = ({
       </form>
 
       {/* Character count */}
-      {message.length > 8000 && (
+      {message.length > 0 && (
         <div
           className={`mt-2 text-xs text-right px-1 ${
-            message.length > 9500 ? "text-red-500" : "text-gray-500"
+            message.length > 9500
+              ? "text-red-500"
+              : message.length > 9000
+              ? "text-orange-500"
+              : message.length > 8000
+              ? "text-yellow-600"
+              : "text-gray-500"
           }`}
         >
           {message.length.toLocaleString()}/10,000
