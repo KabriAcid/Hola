@@ -135,7 +135,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   }, []);
 
   return (
-    <div className="border-t bg-white px-4 py-3">
+    <div className="border-t bg-white px-4 py-2 flex-shrink-0">
       <form onSubmit={handleSubmit} className="relative">
         {/* Hidden file input */}
         <input
@@ -179,7 +179,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             placeholder={placeholder}
             disabled={disabled}
             maxLength={10000}
-            className="w-full pl-12 pr-13 py-2.5 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px] max-h-[120px] overflow-y-auto scrollbar-none"
+            className="w-full pl-12 pr-13 py-2.5 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px] max-h-[80px] overflow-y-auto scrollbar-none"
             rows={1}
             style={{
               scrollbarWidth: "none",
@@ -213,7 +213,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
       {/* Character count */}
       {message.length > 0 && (
         <div
-          className={`mt-2 text-xs text-right px-1 ${
+          className={`mt-1 text-xs text-right px-1 ${
             message.length > 9500
               ? "text-red-500"
               : message.length > 9000

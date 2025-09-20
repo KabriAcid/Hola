@@ -225,6 +225,25 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         className="flex-1 overflow-y-auto bg-gray-50 scrollbar-none"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
+        {/* Encryption Banner */}
+        <div className="flex items-center justify-center py-3 px-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 max-w-md">
+            <div className="flex items-center space-x-2">
+              <svg
+                className="w-4 h-4 text-yellow-600"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z" />
+              </svg>
+              <p className="text-xs text-yellow-800 text-center">
+                Messages are end-to-end encrypted. No one outside of this chat,
+                not even Hola, can read or listen to them.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="px-4 py-2">
           {processedMessages.map((message, index) => (
             <motion.div

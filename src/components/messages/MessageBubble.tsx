@@ -1,6 +1,7 @@
 import React from "react";
 import { Message } from "../../types";
 import MessageStatus from "./MessageStatus";
+import { Edit, Copy, Play, FileText, Download } from "lucide-react";
 
 interface MessageBubbleProps {
   message: Message;
@@ -19,44 +20,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 }) => {
   // Track message sending timeout
   const [showResend, setShowResend] = React.useState(false);
-  const [sendingTimeout, setSendingTimeout] =
-    React.useState<NodeJS.Timeout | null>(null);
-
-  React.useEffect(() => {
-    // Check if message is pending (no status entries or all are 'sent')
-    const isPending =
-      isOwn &&
-      (!message.status ||
-        message.status.length === 0 ||
-        !message.status.some(
-          (s) => s.status === "delivered" || s.status === "read"
-        ));
-
-    if (isPending) {
-      const timeout = setTimeout(() => {
-        setShowResend(true);
-      }, 40000); // 40 seconds
-      setSendingTimeout(timeout);
-    } else {
-      // Clear timeout if message is no longer pending
-      if (sendingTimeout) {
-        clearTimeout(sendingTimeout);
-        setSendingTimeout(null);
-      }
-      setShowResend(false);
-    }
-
-    return () => {
-      if (sendingTimeout) {
-        clearTimeout(sendingTimeout);
-      }
-    };
-  }, [message.status, isOwn, sendingTimeout]);
 
   const handleResend = () => {
-    // Implement resend logic here
     setShowResend(false);
-    // You can call a resend function passed as prop or emit a socket event
     console.log("Resending message:", message.id);
   };
 
@@ -114,9 +80,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
+                <Play className="w-4 h-4 fill-current" />
               </div>
             </div>
             <div className="flex-1">
@@ -131,9 +95,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         return (
           <div className="flex items-center space-x-3 p-2 bg-white bg-opacity-10 rounded-lg">
             <div className="flex-shrink-0">
-              <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24">
-                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-              </svg>
+              <FileText className="w-8 h-8" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
@@ -150,9 +112,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               download={message.file_name}
               className="flex-shrink-0 p-1 hover:bg-white hover:bg-opacity-10 rounded"
             >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
-              </svg>
+              <Download className="w-4 h-4" />
             </a>
           </div>
         );
@@ -250,63 +210,35 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       {/* External actions container for own messages */}
       {isOwn && (
         <div className="flex justify-end items-center mt-1 mr-2 space-x-2">
-          {/* Show message status when sending */}
+          {/* Show message status when not showing resend */}
           {!showResend && (
             <>
-              {/* Check if message is delivered/read to show edit and copy icons */}
-              {message.status &&
-                message.status.some(
-                  (s) => s.status === "delivered" || s.status === "read"
-                ) &&
-                message.message_type === "text" && (
-                  <>
-                    {/* Edit icon */}
-                    <button
-                      onClick={() => {
-                        // TODO: Implement edit functionality
-                        console.log("Edit message:", message.id);
-                      }}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Edit message"
-                    >
-                      <svg
-                        className="w-3 h-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </button>
-                    {/* Copy icon */}
-                    <button
-                      onClick={() =>
-                        navigator.clipboard.writeText(message.content || "")
-                      }
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Copy message"
-                    >
-                      <svg
-                        className="w-3 h-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </button>
-                  </>
-                )}
+              {/* Show edit and copy icons for text messages */}
+              {message.message_type === "text" && (
+                <>
+                  {/* Edit icon */}
+                  <button
+                    onClick={() => {
+                      // TODO: Implement edit functionality
+                      console.log("Edit message:", message.id);
+                    }}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Edit message"
+                  >
+                    <Edit className="w-3 h-3" />
+                  </button>
+                  {/* Copy icon */}
+                  <button
+                    onClick={() =>
+                      navigator.clipboard.writeText(message.content || "")
+                    }
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Copy message"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </>
+              )}
               <MessageStatus message={message} />
             </>
           )}
@@ -325,19 +257,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     className="text-gray-400 hover:text-gray-600 transition-colors"
                     title="Edit message"
                   >
-                    <svg
-                      className="w-3 h-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                      />
-                    </svg>
+                    <Edit className="w-3 h-3" />
                   </button>
                   {/* Copy icon */}
                   <button
@@ -347,19 +267,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     className="text-gray-400 hover:text-gray-600 transition-colors"
                     title="Copy message"
                   >
-                    <svg
-                      className="w-3 h-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      />
-                    </svg>
+                    <Copy className="w-3 h-3" />
                   </button>
                 </>
               )}
