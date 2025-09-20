@@ -131,7 +131,7 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
 
   const formatTime = React.useCallback(
     (date: Date | string) => {
-      if (!date) return "Unknown time";
+      if (!date) return "N/A";
 
       const d = typeof date === "string" ? new Date(date) : date;
 
@@ -142,7 +142,8 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
 
       const now = currentTime; // Use state instead of new Date()
       const diff = now.getTime() - d.getTime();
-      const seconds = Math.floor(diff / 1000);
+      const absDiff = Math.abs(diff);
+      const seconds = Math.floor(absDiff / 1000);
       const minutes = Math.floor(seconds / 60);
       const hours = Math.floor(minutes / 60);
       const days = Math.floor(hours / 24);
