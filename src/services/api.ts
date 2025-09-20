@@ -382,28 +382,13 @@ export const apiService = {
         }),
       });
       if (!res.ok) {
-        throw new Error("Failed to send message");
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to send message");
       }
       return await res.json();
     } catch (error) {
-      console.warn("Failed to send message via API, using fallback:", error);
-      // Fallback to old format for backward compatibility
-      await delay(300);
-      const newMessage = {
-        id: `msg_${Date.now()}`,
-        content,
-        timestamp: new Date(),
-        isOutgoing: true,
-        isRead: true,
-        message_type: messageType,
-        // Support both old and new formats
-        contactId: identifier,
-        conversationId: identifier,
-        created_at: new Date().toISOString(),
-        sender_id: 1,
-        status: "sent" as const,
-      };
-      return newMessage as any;
+      console.error("Failed to send message via API:", error);
+      throw error; // Don't use fallback, let the UI handle the error
     }
   },
 
@@ -457,6 +442,30 @@ export const apiService = {
         updated_at: new Date().toISOString(),
         last_message_at: new Date().toISOString(),
       };
+    }
+  },
+
+  async updateMessageStatus(
+    messageId: string,
+    status: "delivered" | "read"
+  ): Promise<void> {
+    const token = this.getToken();
+    try {
+      const res = await fetch(`/api/messages/${messageId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update message status");
+      }
+    } catch (error) {
+      console.error("Failed to update message status:", error);
+      // Don't throw error for status updates, just log it
     }
   },
 

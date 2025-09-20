@@ -2,6 +2,7 @@ import React from "react";
 import { Message } from "../../types";
 import MessageStatus from "./MessageStatus";
 import { Edit, Copy, Play, FileText, Download } from "lucide-react";
+import { socketService } from "../../socket";
 
 interface MessageBubbleProps {
   message: Message;
@@ -20,10 +21,51 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 }) => {
   // Track message sending timeout
   const [showResend, setShowResend] = React.useState(false);
+  const [currentMessage, setCurrentMessage] = React.useState(message);
+
+  // Update local message state when props change
+  React.useEffect(() => {
+    setCurrentMessage(message);
+  }, [message]);
+
+  // Listen for real-time status updates
+  React.useEffect(() => {
+    if (!isOwn) return;
+
+    const cleanup = socketService.onMessageStatusUpdate((update) => {
+      if (update.messageId === currentMessage.id) {
+        setCurrentMessage((prev) => ({
+          ...prev,
+          status: prev.status
+            ? [
+                ...prev.status.filter((s: any) => s.user_id !== update.userId),
+                {
+                  id: Date.now(),
+                  message_id: update.messageId,
+                  user_id: update.userId,
+                  status: update.status,
+                  timestamp: update.timestamp,
+                },
+              ]
+            : [
+                {
+                  id: Date.now(),
+                  message_id: update.messageId,
+                  user_id: update.userId,
+                  status: update.status,
+                  timestamp: update.timestamp,
+                },
+              ],
+        }));
+      }
+    });
+
+    return cleanup;
+  }, [isOwn, currentMessage.id]);
 
   const handleResend = () => {
     setShowResend(false);
-    console.log("Resending message:", message.id);
+    console.log("Resending message:", currentMessage.id);
   };
 
   const formatTime = (timestamp: string) => {
@@ -54,23 +96,25 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   };
 
   const renderMessageContent = () => {
-    switch (message.message_type) {
+    switch (currentMessage.message_type) {
       case "text":
         return (
-          <p className="break-words whitespace-pre-wrap">{message.content}</p>
+          <p className="break-words whitespace-pre-wrap">
+            {currentMessage.content}
+          </p>
         );
       case "image":
         return (
           <div className="max-w-xs">
             <img
-              src={message.file_url}
+              src={currentMessage.file_url}
               alt="Shared image"
               className="rounded-lg max-w-full h-auto"
               loading="lazy"
             />
-            {message.content && (
+            {currentMessage.content && (
               <p className="mt-2 break-words whitespace-pre-wrap">
-                {message.content}
+                {currentMessage.content}
               </p>
             )}
           </div>
@@ -85,7 +129,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             </div>
             <div className="flex-1">
               <audio controls className="w-full">
-                <source src={message.file_url} type="audio/mpeg" />
+                <source src={currentMessage.file_url} type="audio/mpeg" />
                 Your browser does not support the audio element.
               </audio>
             </div>
@@ -99,17 +143,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {message.file_name}
+                {currentMessage.file_name}
               </p>
               <p className="text-xs opacity-75">
-                {message.file_size
-                  ? `${(message.file_size / 1024).toFixed(1)} KB`
+                {currentMessage.file_size
+                  ? `${(currentMessage.file_size / 1024).toFixed(1)} KB`
                   : "File"}
               </p>
             </div>
             <a
-              href={message.file_url}
-              download={message.file_name}
+              href={currentMessage.file_url}
+              download={currentMessage.file_name}
               className="flex-shrink-0 p-1 hover:bg-white hover:bg-opacity-10 rounded"
             >
               <Download className="w-4 h-4" />
@@ -117,7 +161,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         );
       default:
-        return <p className="break-words">{message.content}</p>;
+        return <p className="break-words">{currentMessage.content}</p>;
     }
   };
 
@@ -167,23 +211,23 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           `}
         >
           {/* Sender name for group chats */}
-          {!isOwn && message.sender && showAvatar && (
+          {!isOwn && currentMessage.sender && showAvatar && (
             <p className="text-xs font-medium text-gray-600 mb-1">
-              {message.sender.full_name}
+              {currentMessage.sender.full_name}
             </p>
           )}
 
           {/* Message content */}
           <div
             className={`text-sm ${
-              message.message_type === "text" ? "" : "space-y-2"
+              currentMessage.message_type === "text" ? "" : "space-y-2"
             }`}
           >
             {renderMessageContent()}
           </div>
 
           {/* Reply indicator */}
-          {message.reply_to_message_id && (
+          {currentMessage.reply_to_message_id && (
             <div className="mt-2 pt-2 border-t border-white border-opacity-20">
               <p className="text-xs opacity-75">Replying to a message</p>
             </div>
@@ -194,14 +238,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             <span
               className={`text-xs ${isOwn ? "text-gray-500" : "text-gray-500"}`}
             >
-              {formatTime(message.created_at)}
+              {formatTime(currentMessage.created_at)}
             </span>
           </div>
 
           {/* Timestamp on hover/tap */}
           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 opacity-0 hover:opacity-100 transition-opacity duration-200 pointer-events-none">
             <div className="bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-              {formatTime(message.created_at)}
+              {formatTime(currentMessage.created_at)}
             </div>
           </div>
         </div>
@@ -214,13 +258,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           {!showResend && (
             <>
               {/* Show edit and copy icons for text messages */}
-              {message.message_type === "text" && (
+              {currentMessage.message_type === "text" && (
                 <>
                   {/* Edit icon */}
                   <button
                     onClick={() => {
                       // TODO: Implement edit functionality
-                      console.log("Edit message:", message.id);
+                      console.log("Edit message:", currentMessage.id);
                     }}
                     className="text-gray-400 hover:text-gray-600 transition-colors"
                     title="Edit message"
@@ -230,7 +274,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   {/* Copy icon */}
                   <button
                     onClick={() =>
-                      navigator.clipboard.writeText(message.content || "")
+                      navigator.clipboard.writeText(
+                        currentMessage.content || ""
+                      )
                     }
                     className="text-gray-400 hover:text-gray-600 transition-colors"
                     title="Copy message"
@@ -239,20 +285,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   </button>
                 </>
               )}
-              <MessageStatus message={message} />
+              <MessageStatus message={currentMessage} />
             </>
           )}
 
           {/* Show edit + copy + resend when timeout reached */}
           {showResend && (
             <>
-              {message.message_type === "text" && (
+              {currentMessage.message_type === "text" && (
                 <>
                   {/* Edit icon */}
                   <button
                     onClick={() => {
                       // TODO: Implement edit functionality
-                      console.log("Edit message:", message.id);
+                      console.log("Edit message:", currentMessage.id);
                     }}
                     className="text-gray-400 hover:text-gray-600 transition-colors"
                     title="Edit message"
@@ -262,7 +308,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   {/* Copy icon */}
                   <button
                     onClick={() =>
-                      navigator.clipboard.writeText(message.content || "")
+                      navigator.clipboard.writeText(
+                        currentMessage.content || ""
+                      )
                     }
                     className="text-gray-400 hover:text-gray-600 transition-colors"
                     title="Copy message"

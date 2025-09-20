@@ -846,6 +846,368 @@ app.get("/api/call-logs", authenticateJWT, async (req, res) => {
   }
 });
 
+// ========================================
+// MESSAGING ENDPOINTS
+// ========================================
+
+// Get or create a direct conversation between two users
+app.post(
+  "/api/conversations",
+  authenticateJWT,
+  asyncHandler(async (req, res) => {
+    const { type = "direct", participant_ids } = req.body;
+
+    if (type === "direct" && participant_ids?.length === 1) {
+      const otherUserId = participant_ids[0];
+
+      // Check if conversation already exists between these users
+      const existingConversation = await dbGet(
+        `SELECT c.* FROM conversations c
+         JOIN conversation_participants cp1 ON c.id = cp1.conversation_id
+         JOIN conversation_participants cp2 ON c.id = cp2.conversation_id
+         WHERE c.type = 'direct' 
+           AND cp1.user_id = ? 
+           AND cp2.user_id = ?`,
+        [req.user.id, otherUserId]
+      );
+
+      if (existingConversation) {
+        return res.json(existingConversation);
+      }
+
+      // Create new conversation
+      const conversationResult = await dbRun(
+        `INSERT INTO conversations (type, created_by, created_at, updated_at, last_message_at) 
+         VALUES (?, ?, datetime('now'), datetime('now'), datetime('now'))`,
+        [type, req.user.id]
+      );
+
+      const conversationId = conversationResult.lastID;
+
+      // Add participants
+      await dbRun(
+        `INSERT INTO conversation_participants (conversation_id, user_id, joined_at) VALUES (?, ?, datetime('now'))`,
+        [conversationId, req.user.id]
+      );
+      await dbRun(
+        `INSERT INTO conversation_participants (conversation_id, user_id, joined_at) VALUES (?, ?, datetime('now'))`,
+        [conversationId, otherUserId]
+      );
+
+      // Return the created conversation
+      const conversation = await dbGet(
+        `SELECT * FROM conversations WHERE id = ?`,
+        [conversationId]
+      );
+
+      res.status(201).json(conversation);
+    } else {
+      return sendError(
+        res,
+        400,
+        "Only direct conversations supported currently"
+      );
+    }
+  })
+);
+
+// Get conversations for the current user
+app.get(
+  "/api/conversations",
+  authenticateJWT,
+  asyncHandler(async (req, res) => {
+    const conversations = await new Promise((resolve, reject) => {
+      db.all(
+        `SELECT DISTINCT c.*, 
+                u.full_name as other_user_name,
+                u.avatar as other_user_avatar,
+                u.status as other_user_status
+         FROM conversations c
+         JOIN conversation_participants cp ON c.id = cp.conversation_id
+         LEFT JOIN conversation_participants cp2 ON c.id = cp2.conversation_id AND cp2.user_id != ?
+         LEFT JOIN users u ON cp2.user_id = u.id
+         WHERE cp.user_id = ?
+         ORDER BY c.last_message_at DESC`,
+        [req.user.id, req.user.id],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        }
+      );
+    });
+
+    res.json(conversations);
+  })
+);
+
+// Send a message to a conversation
+app.post(
+  "/api/conversations/:conversationId/messages",
+  authenticateJWT,
+  asyncHandler(async (req, res) => {
+    const conversationId = req.params.conversationId;
+    const { content, message_type = "text", reply_to_message_id } = req.body;
+
+    if (!content && message_type === "text") {
+      return sendError(res, 400, "Message content is required");
+    }
+
+    // Verify user is participant in this conversation
+    const participant = await dbGet(
+      `SELECT id FROM conversation_participants 
+       WHERE conversation_id = ? AND user_id = ?`,
+      [conversationId, req.user.id]
+    );
+
+    if (!participant) {
+      return sendError(res, 403, "Not a participant in this conversation");
+    }
+
+    // Insert message
+    const messageResult = await dbRun(
+      `INSERT INTO messages (conversation_id, sender_id, content, message_type, reply_to_message_id, created_at) 
+       VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+      [
+        conversationId,
+        req.user.id,
+        content,
+        message_type,
+        reply_to_message_id || null,
+      ]
+    );
+
+    const messageId = messageResult.lastID;
+
+    // Create initial status as "sent"
+    await dbRun(
+      `INSERT INTO message_status (message_id, user_id, status, timestamp) 
+       VALUES (?, ?, 'sent', datetime('now'))`,
+      [messageId, req.user.id]
+    );
+
+    // Get the created message with status
+    const message = await dbGet(
+      `SELECT m.*, 
+              u.name as sender_name,
+              u.avatar as sender_avatar,
+              json_group_array(
+                json_object(
+                  'id', ms.id,
+                  'message_id', ms.message_id,
+                  'user_id', ms.user_id,
+                  'status', ms.status,
+                  'timestamp', ms.timestamp
+                )
+              ) as status
+       FROM messages m
+       LEFT JOIN users u ON m.sender_id = u.id
+       LEFT JOIN message_status ms ON m.id = ms.message_id
+       WHERE m.id = ?
+       GROUP BY m.id`,
+      [messageId]
+    );
+
+    // Parse status JSON
+    if (message.status) {
+      try {
+        message.status = JSON.parse(message.status).filter(
+          (s) => s.id !== null
+        );
+      } catch (e) {
+        message.status = [];
+      }
+    }
+
+    // Add sender info
+    message.sender = {
+      id: req.user.id,
+      full_name: message.sender_name,
+      avatar: message.sender_avatar,
+    };
+
+    // Mark as own message
+    message.is_own = true;
+
+    // Emit real-time message to other participants via Socket.IO
+    const otherParticipants = await new Promise((resolve, reject) => {
+      db.all(
+        `SELECT cp.user_id, u.phone 
+         FROM conversation_participants cp
+         JOIN users u ON cp.user_id = u.id
+         WHERE cp.conversation_id = ? AND cp.user_id != ?`,
+        [conversationId, req.user.id],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        }
+      );
+    });
+
+    // Send real-time message to connected users
+    otherParticipants.forEach((participant) => {
+      const socketId = userSockets[participant.phone];
+      if (socketId) {
+        io.to(socketId).emit("new-message", {
+          ...message,
+          is_own: false,
+        });
+      }
+    });
+
+    res.status(201).json(message);
+  })
+);
+
+// Get messages for a conversation
+app.get(
+  "/api/conversations/:conversationId/messages",
+  authenticateJWT,
+  asyncHandler(async (req, res) => {
+    const conversationId = req.params.conversationId;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+
+    // Verify user is participant in this conversation
+    const participant = await dbGet(
+      `SELECT id FROM conversation_participants 
+       WHERE conversation_id = ? AND user_id = ?`,
+      [conversationId, req.user.id]
+    );
+
+    if (!participant) {
+      return sendError(res, 403, "Not a participant in this conversation");
+    }
+
+    const messages = await new Promise((resolve, reject) => {
+      db.all(
+        `SELECT m.*, 
+                u.name as sender_name,
+                u.avatar as sender_avatar,
+                GROUP_CONCAT(
+                  ms.id || '|' || ms.user_id || '|' || ms.status || '|' || ms.timestamp, 
+                  ','
+                ) as status_data
+         FROM messages m
+         LEFT JOIN users u ON m.sender_id = u.id
+         LEFT JOIN message_status ms ON m.id = ms.message_id
+         WHERE m.conversation_id = ? AND m.deleted_at IS NULL
+         GROUP BY m.id
+         ORDER BY m.created_at DESC
+         LIMIT ? OFFSET ?`,
+        [conversationId, limit, offset],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        }
+      );
+    });
+
+    // Process messages and add sender info + status
+    const processedMessages = messages.map((message) => {
+      // Parse status data
+      if (message.status_data) {
+        const statusEntries = message.status_data.split(",").filter(Boolean);
+        message.status = statusEntries.map((entry) => {
+          const [id, user_id, status, timestamp] = entry.split("|");
+          return {
+            id: parseInt(id),
+            message_id: message.id,
+            user_id: parseInt(user_id),
+            status,
+            timestamp,
+          };
+        });
+      } else {
+        message.status = [];
+      }
+
+      // Add sender info
+      message.sender = {
+        id: message.sender_id,
+        full_name: message.sender_name,
+        avatar: message.sender_avatar,
+      };
+
+      // Mark if message is from current user
+      message.is_own = message.sender_id === req.user.id;
+
+      // Clean up temporary fields
+      delete message.sender_name;
+      delete message.sender_avatar;
+      delete message.status_data;
+
+      return message;
+    });
+
+    res.json(processedMessages.reverse()); // Return in chronological order
+  })
+);
+
+// Update message status (delivered, read)
+app.put(
+  "/api/messages/:messageId/status",
+  authenticateJWT,
+  asyncHandler(async (req, res) => {
+    const messageId = req.params.messageId;
+    const { status } = req.body;
+
+    if (!["delivered", "read"].includes(status)) {
+      return sendError(
+        res,
+        400,
+        "Invalid status. Must be 'delivered' or 'read'"
+      );
+    }
+
+    // Verify message exists and user is participant
+    const message = await dbGet(
+      `SELECT m.*, cp.user_id as participant_id
+       FROM messages m
+       JOIN conversation_participants cp ON m.conversation_id = cp.conversation_id
+       WHERE m.id = ? AND cp.user_id = ?`,
+      [messageId, req.user.id]
+    );
+
+    if (!message) {
+      return sendError(res, 404, "Message not found or not authorized");
+    }
+
+    // Don't update status for own messages
+    if (message.sender_id === req.user.id) {
+      return sendError(res, 400, "Cannot update status of own message");
+    }
+
+    // Update or insert status
+    await dbRun(
+      `INSERT OR REPLACE INTO message_status (message_id, user_id, status, timestamp) 
+       VALUES (?, ?, ?, datetime('now'))`,
+      [messageId, req.user.id, status]
+    );
+
+    // Emit status update to sender via Socket.IO
+    const sender = await dbGet(
+      `SELECT u.phone FROM users u 
+       JOIN messages m ON u.id = m.sender_id 
+       WHERE m.id = ?`,
+      [messageId]
+    );
+
+    if (sender) {
+      const socketId = userSockets[sender.phone];
+      if (socketId) {
+        io.to(socketId).emit("message-status-update", {
+          messageId: parseInt(messageId),
+          userId: req.user.id,
+          status,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
+    res.json({ success: true });
+  })
+);
+
 // Delete pending registration by verification code
 app.delete(
   "/api/pending-registration/:code",

@@ -20,7 +20,7 @@ import { CallScreen } from "../components/calls/CallScreen";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
 import { useCall } from "../hooks/useCall";
-import { getSocket } from "../socket";
+import { socketService } from "../socket";
 import { apiService } from "../services/api";
 import { Contact, CallLog, Conversation, Message } from "../types";
 
@@ -132,15 +132,23 @@ export const MainApp: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    const socket = getSocket();
-    socketRef.current = socket;
-    if (!socket.connected) socket.connect();
-    // Register user by phone number
-    socket.emit("register", user.phone);
+    // Connect to socket service
+    socketService.connect(user.phone);
 
-    // Incoming call
-    socket.on("call-incoming", (payload) => {
-      // payload: { from, to, channel, ... }
+    // Set up message status callback
+    socketService.setUpdateMessageStatusCallback((messageId, status) => {
+      apiService.updateMessageStatus(messageId, status).catch((error) => {
+        console.error("Failed to update message status:", error);
+      });
+    });
+
+    // Listen for new messages
+    const cleanupMessages = socketService.onNewMessage((message) => {
+      // Add the new message to the current messages
+      setMessages((prev) => [...prev, message]);
+    }); // Handle call events via window events (already set up in socketService)
+    const handleIncomingCall = (event: CustomEvent) => {
+      const payload = event.detail;
       const contact = contacts.find((c) => c.phone === payload.from) || {
         id: "temp",
         name: payload.from,
@@ -149,33 +157,62 @@ export const MainApp: React.FC = () => {
       setCallChannel(payload.channel || null);
       setIsCallAnswered(false);
       startCall(contact, true);
-    });
+    };
 
-    // Call accepted (other party answered)
-    socket.on("call-accepted", (payload) => {
+    const handleCallAccepted = (event: CustomEvent) => {
+      const payload = event.detail;
       setIsCallAnswered(true);
       setCallChannel(payload.channel || null);
-    });
+    };
 
-    // Call declined
-    socket.on("call-declined", (payload) => {
+    const handleCallDeclined = (event: CustomEvent) => {
       setIsCallAnswered(false);
       setCallChannel(null);
       endCall();
-    });
+    };
 
-    // Call ended
-    socket.on("call-ended", (payload) => {
+    const handleCallEnded = (event: CustomEvent) => {
       setIsCallAnswered(false);
       setCallChannel(null);
       endCall();
-    });
+    };
+
+    // Add event listeners
+    window.addEventListener(
+      "hola-call-incoming",
+      handleIncomingCall as EventListener
+    );
+    window.addEventListener(
+      "hola-call-accepted",
+      handleCallAccepted as EventListener
+    );
+    window.addEventListener(
+      "hola-call-declined",
+      handleCallDeclined as EventListener
+    );
+    window.addEventListener(
+      "hola-call-ended",
+      handleCallEnded as EventListener
+    );
 
     return () => {
-      socket.off("call-incoming");
-      socket.off("call-accepted");
-      socket.off("call-declined");
-      socket.off("call-ended");
+      cleanupMessages();
+      window.removeEventListener(
+        "hola-call-incoming",
+        handleIncomingCall as EventListener
+      );
+      window.removeEventListener(
+        "hola-call-accepted",
+        handleCallAccepted as EventListener
+      );
+      window.removeEventListener(
+        "hola-call-declined",
+        handleCallDeclined as EventListener
+      );
+      window.removeEventListener(
+        "hola-call-ended",
+        handleCallEnded as EventListener
+      );
     };
     // eslint-disable-next-line
   }, [user, contacts, startCall, endCall]);
@@ -266,8 +303,8 @@ export const MainApp: React.FC = () => {
     }
 
     // Send call-invite via socket
-    if (user && socketRef.current) {
-      socketRef.current.emit("call-invite", {
+    if (user) {
+      socketService.emitCallInvite({
         from: user.phone,
         to: phone,
         channel,
@@ -277,11 +314,11 @@ export const MainApp: React.FC = () => {
 
   const handleEndCall = () => {
     // Send call-ended via socket
-    if (user && callState.contact && socketRef.current) {
-      socketRef.current.emit("call-end", {
+    if (user && callState.contact) {
+      socketService.emitCallEnd({
         from: user.phone,
         to: callState.contact.phone,
-        channel: callChannel,
+        channel: callChannel || "",
       });
     }
     setIsCallAnswered(false);
@@ -291,8 +328,8 @@ export const MainApp: React.FC = () => {
 
   // Accept incoming call
   const handleAnswerCall = () => {
-    if (user && callState.contact && socketRef.current) {
-      socketRef.current.emit("call-accept", {
+    if (user && callState.contact) {
+      socketService.emitCallAccept({
         from: user.phone,
         to: callState.contact.phone,
         channel: callChannel,
@@ -303,8 +340,8 @@ export const MainApp: React.FC = () => {
 
   // Decline incoming call
   const handleDeclineCall = () => {
-    if (user && callState.contact && socketRef.current) {
-      socketRef.current.emit("call-decline", {
+    if (user && callState.contact) {
+      socketService.emitCallDecline({
         from: user.phone,
         to: callState.contact.phone,
         channel: callChannel,
