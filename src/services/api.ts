@@ -310,27 +310,137 @@ export const apiService = {
     return res.json();
   },
 
-  // Messages
+  // Messages and Conversations
   async getConversations(): Promise<Conversation[]> {
-    await delay(500);
-    return [...mockConversations];
+    const token = this.getToken();
+    try {
+      const res = await fetch("/api/conversations", {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+      if (!res.ok) {
+        // Fallback to mock data if API not implemented yet
+        console.warn("Conversations API not available, using mock data");
+        await delay(500);
+        return [...mockConversations];
+      }
+      return await res.json();
+    } catch (error) {
+      console.warn("Failed to fetch conversations, using mock data:", error);
+      await delay(500);
+      return [...mockConversations];
+    }
   },
 
-  async getMessages(contactId: string): Promise<Message[]> {
-    await delay(500);
-    return mockMessages.filter((m) => m.contactId === contactId);
+  async getMessages(identifier: string): Promise<Message[]> {
+    const token = this.getToken();
+    try {
+      const res = await fetch(`/api/conversations/${identifier}/messages`, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+      if (!res.ok) {
+        // Fallback to mock data
+        console.warn("Messages API not available, using mock data");
+        await delay(500);
+        // Check both contactId and conversationId for backward compatibility
+        return mockMessages.filter((m: any) => 
+          m.contactId === identifier || m.conversationId === identifier
+        );
+      }
+      return await res.json();
+    } catch (error) {
+      console.warn("Failed to fetch messages, using mock data:", error);
+      await delay(500);
+      // Check both contactId and conversationId for backward compatibility
+      return mockMessages.filter((m: any) => 
+        m.contactId === identifier || m.conversationId === identifier
+      );
+    }
   },
 
-  async sendMessage(contactId: string, content: string): Promise<Message> {
-    await delay(300);
-    return {
-      id: `msg_${Date.now()}`,
-      contactId,
-      content,
-      timestamp: new Date(),
-      isOutgoing: true,
-      isRead: true,
-    };
+  async sendMessage(contactId: string, content: string, messageType: 'text' | 'image' | 'audio' | 'file' = 'text'): Promise<Message> {
+    const token = this.getToken();
+    try {
+      const res = await fetch(`/api/conversations/${contactId}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({
+          content,
+          message_type: messageType,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to send message");
+      }
+      return await res.json();
+    } catch (error) {
+      console.warn("Failed to send message via API, using fallback:", error);
+      // Fallback to old format
+      await delay(300);
+      return {
+        id: `msg_${Date.now()}`,
+        contactId,
+        content,
+        timestamp: new Date(),
+        isOutgoing: true,
+        isRead: true,
+      } as any;
+    }
+  },
+
+  async createOrGetConversation(contactId: string): Promise<Conversation> {
+    const token = this.getToken();
+    try {
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({
+          type: "direct",
+          participant_ids: [contactId],
+        }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to create conversation");
+      }
+      return await res.json();
+    } catch (error) {
+      console.warn("Failed to create conversation via API:", error);
+      // Create a mock conversation
+      const contact = await this.getContacts().then(contacts => 
+        contacts.find(c => c.id === contactId)
+      );
+      return {
+        id: parseInt(contactId),
+        type: 'direct',
+        participants: contact ? [{
+          id: 1,
+          conversation_id: parseInt(contactId),
+          user_id: parseInt(contact.id),
+          joined_at: new Date().toISOString(),
+          role: 'member',
+          is_muted: false,
+          user: {
+            id: parseInt(contact.id),
+            full_name: contact.name,
+            avatar: contact.avatar,
+            status: contact.isOnline ? 'online' : 'offline'
+          }
+        }] : [],
+        created_by: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_message_at: new Date().toISOString()
+      };
+    }
   },
 
   // User profile
