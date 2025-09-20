@@ -17,9 +17,33 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   const [searchResults, setSearchResults] = useState<Contact[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(true);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
+
+  // Load contacts on component mount
+  useEffect(() => {
+    const loadContacts = async () => {
+      setContactsLoading(true);
+      try {
+        const allContacts = await apiService.getContacts();
+        const contactsWithStringIds = allContacts.map((contact) => ({
+          ...contact,
+          id: String(contact.id),
+        }));
+        setContacts(contactsWithStringIds);
+      } catch (error) {
+        console.error("Error loading contacts:", error);
+        setContacts([]);
+      } finally {
+        setContactsLoading(false);
+      }
+    };
+
+    loadContacts();
+  }, []);
 
   // Debounced search function
   const performSearch = async (query: string) => {
@@ -71,7 +95,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   // Handle contact selection
   const handleContactSelect = (contact: Contact) => {
     console.log("Contact selected:", contact);
-    setShowDropdown(true);
+    setShowDropdown(false);
     setSearchQuery("");
     setSearchResults([]);
     onSelectConversation(String(contact.id));
@@ -252,19 +276,66 @@ export const ConversationList: React.FC<ConversationListProps> = ({
         )}
       </div>
 
+      {/* Quick Contact Avatars */}
+      {!contactsLoading && contacts.length > 0 && (
+        <div className="p-4 border-b border-gray-200 bg-white">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">
+            Quick Message
+          </h4>
+          <div className="flex space-x-3 overflow-x-auto scrollbar-none pb-2">
+            {contacts.map((contact) => (
+              <motion.div
+                key={contact.id}
+                className="flex-shrink-0 flex flex-col items-center cursor-pointer group"
+                onClick={() => handleContactSelect(contact)}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="relative">
+                  <Avatar
+                    src={`/assets/avatars/${contact.avatar}`}
+                    alt={contact.name}
+                    size="lg"
+                    isOnline={contact.isOnline}
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-full transition-all duration-200" />
+                </div>
+                <span className="text-xs text-gray-600 mt-2 text-center max-w-[60px] truncate group-hover:text-gray-900 transition-colors">
+                  {contact.name.split(" ")[0]}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Main Content - Empty State */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <MessageCircle className="w-10 h-10 text-gray-400" />
           </div>
-          <h3 className="text-xl font-medium text-gray-900 mb-3">
-            Search for contacts to start messaging
-          </h3>
-          <p className="text-gray-600 max-w-sm mx-auto">
-            Use the search bar above to find your contacts and start a
-            conversation
-          </p>
+          {contacts.length > 0 ? (
+            <>
+              <h3 className="text-xl font-medium text-gray-900 mb-3">
+                Start a conversation
+              </h3>
+              <p className="text-gray-600 max-w-sm mx-auto">
+                Search for contacts above or tap on an avatar to start messaging
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-xl font-medium text-gray-900 mb-3">
+                No contacts yet
+              </h3>
+              <p className="text-gray-600 max-w-sm mx-auto">
+                Add some contacts first to start messaging
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>
