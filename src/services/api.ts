@@ -281,8 +281,8 @@ export const apiService = {
   },
 
   async addCallLog(
-    calleePhone: string,
-    calleeName: string,
+    receiverPhone: string,
+    receiverName: string,
     channel?: string
   ): Promise<any> {
     const token = this.getToken();
@@ -293,8 +293,8 @@ export const apiService = {
         Authorization: token ? `Bearer ${token}` : "",
       },
       body: JSON.stringify({
-        calleePhone,
-        calleeName,
+        calleePhone: receiverPhone,
+        calleeName: receiverName,
         direction: "outgoing",
         channel,
       }),

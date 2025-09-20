@@ -712,19 +712,19 @@ app.post(
     } = req.body;
 
     if (!calleePhone) {
-      return sendError(res, 400, "Callee phone number is required");
+      return sendError(res, 400, "Receiver phone number is required");
     }
 
-    // Find the callee user by phone number (optional - they might not be registered)
-    const calleeUser = await dbGet("SELECT id FROM users WHERE phone = ?", [
+    // Find the receiver user by phone number (optional - they might not be registered)
+    const receiverUser = await dbGet("SELECT id FROM users WHERE phone = ?", [
       calleePhone,
     ]);
 
     // If no registered user found, create a temporary user for the call log
-    let calleeId = null;
-    if (!calleeUser) {
+    let receiverId = null;
+    if (!receiverUser) {
       // Create a temporary/placeholder user entry for non-registered contacts
-      // This is a workaround for the NOT NULL constraint on callee_id
+      // This is a workaround for the NOT NULL constraint on receiver_id
       const tempUser = await dbGet(
         "SELECT id FROM users WHERE phone = 'temp_non_registered' AND is_verified = 0"
       );
@@ -739,12 +739,12 @@ app.post(
             "temp_password",
           ]
         );
-        calleeId = tempResult.lastID;
+        receiverId = tempResult.lastID;
       } else {
-        calleeId = tempUser.id;
+        receiverId = tempUser.id;
       }
     } else {
-      calleeId = calleeUser.id;
+      receiverId = receiverUser.id;
     }
 
     // Use current UTC timestamp (let frontend handle timezone display)
@@ -756,8 +756,8 @@ app.post(
 
     const result = await dbRun(insertSql, [
       req.user.id,
-      calleeId,
-      calleeName || "Unknown Contact",
+      receiverId,
+      calleeName || "Unknown",
       calleePhone,
       channel || null,
       direction,
@@ -768,7 +768,7 @@ app.post(
     res.status(201).json({
       id: result.lastID,
       caller_id: req.user.id,
-      receiver_id: calleeId,
+      receiver_id: receiverId,
       channel: channel || null,
       direction: direction,
       status: "received",
