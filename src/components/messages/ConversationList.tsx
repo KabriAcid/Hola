@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import ReactDOM from "react-dom";
 import { motion } from "framer-motion";
-import { MessageCircle, Search, X } from "lucide-react";
+import { MessageCircle, Search } from "lucide-react";
 import { Contact, Conversation } from "../../types";
-import { Avatar } from "../ui/Avatar";
 import { apiService } from "../../services/api";
 
 interface ConversationListProps {
@@ -20,11 +18,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   loading = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Contact[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showNewChat, setShowNewChat] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   // Load contacts for new chat
@@ -42,56 +36,14 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     loadContacts();
   }, []);
 
-  // Search contacts for new conversation
-  const performSearch = async (query: string) => {
-    if (query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const filtered = contacts.filter(
-        (contact) =>
-          contact.name.toLowerCase().includes(query.toLowerCase()) ||
-          contact.phone.includes(query)
-      );
-      setSearchResults(filtered);
-    } catch (error) {
-      console.error("Error searching contacts:", error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Handle search input change with debouncing
+  // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      performSearch(query);
-    }, 300);
+    setSearchQuery(e.target.value);
   };
 
   // Handle conversation selection
   const handleConversationSelect = (conversation: Conversation) => {
     onSelectConversation(conversation.id);
-  };
-
-  // Handle starting new conversation
-  const handleStartNewConversation = (contact: Contact) => {
-    if (onStartNewConversation) {
-      onStartNewConversation(Number(contact.id));
-    }
-    setShowNewChat(false);
-    setSearchQuery("");
-    setSearchResults([]);
   };
 
   // Format time for conversation preview
@@ -120,11 +72,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   // Get conversation display info
   const getConversationInfo = (conversation: Conversation) => {
     if (!conversation) {
-      return {
-        name: "Unknown",
-        avatar: undefined,
-        status: "Offline",
-      };
+      return null; // Return null for invalid conversations
     }
 
     if (conversation.type === "group") {
@@ -137,11 +85,14 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
     // For direct chats, get the other participant
     const otherParticipant = conversation.participants?.[0];
+    if (!otherParticipant?.user?.full_name) {
+      return null; // Skip conversations without valid participant data
+    }
+
     return {
-      name: otherParticipant?.user?.full_name || "Unknown",
-      avatar: otherParticipant?.user?.avatar,
-      status:
-        otherParticipant?.user?.status === "online" ? "Online" : "Offline",
+      name: otherParticipant.user.full_name,
+      avatar: otherParticipant.user.avatar,
+      status: otherParticipant.user.status === "online" ? "Online" : "Offline",
     };
   };
 
@@ -154,275 +105,197 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     };
   }, []);
 
+  // Sort contacts alphabetically
+  const sortedContacts = [...contacts].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+
+  // Filter contacts based on search query
+  const filteredContacts = searchQuery
+    ? sortedContacts.filter(
+        (contact) =>
+          contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          contact.phone.includes(searchQuery)
+      )
+    : sortedContacts;
+
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Header with New Chat Button */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-        <button
-          onClick={() => setShowNewChat(true)}
-          className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-        </button>
-      </div>
-
-      {/* Search for existing conversations */}
-      <div className="p-4">
+      {/* Single Header */}
+      <div className="px-4 py-3 border-b border-gray-200">
+        <h1 className="text-2xl font-bold text-black mb-3">Messages</h1>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
+            <Search className="h-4 w-4 text-gray-400" />
           </div>
           <input
             type="text"
             value={searchQuery}
             onChange={handleSearchChange}
-            placeholder="Search conversations..."
-            className="block w-full pl-10 py-3 border border-gray-300 rounded-full leading-5 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-0 text-base"
+            placeholder="Search contacts..."
+            className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-400 focus:outline-none focus:border-black text-sm"
           />
         </div>
       </div>
 
-      {/* Conversations List */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Horizontal Contacts List */}
+      <div className="px-4 py-3 border-b border-gray-200">
+        <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-none">
+          {filteredContacts.map((contact) => (
+            <motion.button
+              key={contact.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onStartNewConversation?.(Number(contact.id))}
+              className="flex-shrink-0 flex flex-col items-center space-y-1 p-2 hover:bg-gray-100 rounded-lg transition-colors min-w-16"
+            >
+              <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
+                {contact.avatar ? (
+                  <img
+                    src={`/assets/avatars/${contact.avatar}`}
+                    alt={contact.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-black text-white font-medium text-sm">
+                    {contact.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <span className="text-xs text-black font-medium truncate max-w-16 text-center">
+                {contact.name.split(" ")[0]}
+              </span>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      {/* Conversations List - iMessage Style */}
+      <div className="flex-1 overflow-y-auto bg-white">
         {loading ? (
           <div className="flex items-center justify-center p-8">
-            <div className="text-gray-500">Loading conversations...</div>
+            <div className="text-gray-500 text-sm">Loading...</div>
           </div>
         ) : conversations && conversations.length > 0 ? (
-          conversations
-            .filter((conversation) => {
-              if (!conversation) return false;
-              if (!searchQuery) return true;
-              const info = getConversationInfo(conversation);
-              return info.name
-                .toLowerCase()
-                .includes(searchQuery.toLowerCase());
-            })
-            .map((conversation, index) => {
-              if (!conversation) return null;
-              const info = getConversationInfo(conversation);
-              return (
-                <motion.div
-                  key={conversation.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
-                  onClick={() => handleConversationSelect(conversation)}
-                >
-                  <div className="relative">
-                    <Avatar
-                      src={
-                        info.avatar
-                          ? `/assets/avatars/${info.avatar}`
-                          : undefined
-                      }
-                      alt={info.name}
-                      size="lg"
-                      isOnline={
-                        conversation.type === "direct" &&
-                        conversation.participants?.[0]?.user?.status ===
-                          "online"
-                      }
-                    />
-                    {conversation.unread_count &&
-                      conversation.unread_count > 0 && (
-                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center">
-                          {conversation.unread_count > 9
-                            ? "9+"
-                            : conversation.unread_count}
-                        </div>
-                      )}
-                  </div>
-
-                  <div className="ml-4 flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900 truncate">
-                        {info.name}
-                      </h3>
-                      {conversation.last_message?.created_at && (
-                        <span className="text-xs text-gray-500">
-                          {formatTime(conversation.last_message.created_at)}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-600 truncate">
-                        {conversation.last_message ? (
-                          <>
-                            {conversation.last_message.is_own && "You: "}
-                            {conversation.last_message.message_type === "text"
-                              ? conversation.last_message.content || "Message"
-                              : `${
-                                  conversation.last_message.message_type
-                                    ?.charAt(0)
-                                    ?.toUpperCase() +
-                                    conversation.last_message.message_type?.slice(
-                                      1
-                                    ) || "Message"
-                                } message`}
-                          </>
+          <div className="divide-y divide-gray-100">
+            {conversations
+              .filter((conversation) => {
+                if (!conversation) return false;
+                const info = getConversationInfo(conversation);
+                if (!info) return false; // Filter out conversations with invalid data
+                if (!searchQuery) return true;
+                return info.name
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase());
+              })
+              .map((conversation, index) => {
+                if (!conversation) return null;
+                const info = getConversationInfo(conversation);
+                if (!info) return null; // Skip invalid conversation info
+                return (
+                  <motion.div
+                    key={conversation.id}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                    className="flex items-center px-4 py-3 hover:bg-gray-100 cursor-pointer transition-colors"
+                    onClick={() => handleConversationSelect(conversation)}
+                  >
+                    {/* Avatar with unread indicator */}
+                    <div className="relative flex-shrink-0 mr-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
+                        {info.avatar ? (
+                          <img
+                            src={`/assets/avatars/${info.avatar}`}
+                            alt={info.name}
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
-                          info.status
+                          <div className="w-full h-full flex items-center justify-center bg-black text-white font-medium text-lg">
+                            {info.name.charAt(0).toUpperCase()}
+                          </div>
                         )}
-                      </p>
-
-                      {conversation.unread_count &&
-                        conversation.unread_count > 0 && (
-                          <div className="ml-2 w-2 h-2 bg-blue-500 rounded-full"></div>
+                      </div>
+                      {/* Online indicator */}
+                      {conversation.type === "direct" &&
+                        conversation.participants?.[0]?.user?.status ===
+                          "online" && (
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
                         )}
                     </div>
-                  </div>
-                </motion.div>
-              );
-            })
+
+                    {/* Message content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between mb-1">
+                        <h3 className="font-semibold text-black truncate text-base">
+                          {info.name}
+                        </h3>
+                        {conversation.last_message?.created_at && (
+                          <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                            {formatTime(conversation.last_message.created_at)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-gray-600 truncate pr-2">
+                          {conversation.last_message ? (
+                            <>
+                              {conversation.last_message.is_own && (
+                                <span className="text-gray-500">You: </span>
+                              )}
+                              {conversation.last_message.message_type === "text"
+                                ? conversation.last_message.content || "Message"
+                                : `${
+                                    conversation.last_message.message_type
+                                      ?.charAt(0)
+                                      ?.toUpperCase() +
+                                      conversation.last_message.message_type?.slice(
+                                        1
+                                      ) || "Message"
+                                  } message`}
+                            </>
+                          ) : (
+                            <span className="text-gray-400 italic">
+                              {info.status}
+                            </span>
+                          )}
+                        </p>
+
+                        {/* Unread count badge */}
+                        {conversation.unread_count &&
+                          conversation.unread_count > 0 && (
+                            <div className="flex-shrink-0 ml-2">
+                              <div className="min-w-5 h-5 bg-black text-white text-xs rounded-full flex items-center justify-center px-1.5 font-medium">
+                                {conversation.unread_count > 99
+                                  ? "99+"
+                                  : conversation.unread_count}
+                              </div>
+                            </div>
+                          )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+          </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <MessageCircle className="w-10 h-10 text-gray-400" />
+          <div className="flex-1 flex items-center justify-center p-8 bg-white">
+            <div className="text-center max-w-xs">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-xl font-medium text-gray-900 mb-3">
-                No conversations yet
+              <h3 className="text-lg font-medium text-black mb-2">
+                No Messages
               </h3>
-              <p className="text-gray-600 max-w-sm mx-auto mb-6">
-                Start messaging your contacts to see conversations here
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Select a contact above to start messaging
               </p>
-              <button
-                onClick={() => setShowNewChat(true)}
-                className="px-6 py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
-              >
-                Start New Chat
-              </button>
             </div>
           </div>
         )}
       </div>
-
-      {/* New Chat Modal */}
-      {showNewChat && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-md max-h-[80vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold">New Chat</h2>
-              <button
-                onClick={() => {
-                  setShowNewChat(false);
-                  setSearchQuery("");
-                  setSearchResults([]);
-                }}
-                className="p-1 hover:bg-gray-100 rounded-full"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-4">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  placeholder="Search contacts..."
-                  className="block w-full pl-10 py-3 border border-gray-300 rounded-lg leading-5 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-0"
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto max-h-96">
-              {isSearching ? (
-                <div className="flex items-center justify-center p-8">
-                  <div className="text-gray-500">Searching...</div>
-                </div>
-              ) : searchQuery ? (
-                searchResults.length > 0 ? (
-                  searchResults.map((contact, index) => (
-                    <motion.div
-                      key={contact.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
-                      onClick={() => handleStartNewConversation(contact)}
-                    >
-                      <Avatar
-                        src={
-                          contact.avatar
-                            ? `/assets/avatars/${contact.avatar}`
-                            : undefined
-                        }
-                        alt={contact.name}
-                        size="md"
-                        isOnline={contact.isOnline}
-                      />
-                      <div className="ml-3 flex-1">
-                        <h3 className="font-medium text-gray-900">
-                          {contact.name}
-                        </h3>
-                        <p className="text-sm text-gray-600">{contact.phone}</p>
-                      </div>
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className="flex items-center justify-center p-8">
-                    <div className="text-center">
-                      <MessageCircle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500 text-sm">No contacts found</p>
-                    </div>
-                  </div>
-                )
-              ) : (
-                contacts.map((contact, index) => (
-                  <motion.div
-                    key={contact.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
-                    onClick={() => handleStartNewConversation(contact)}
-                  >
-                    <Avatar
-                      src={
-                        contact.avatar
-                          ? `/assets/avatars/${contact.avatar}`
-                          : undefined
-                      }
-                      alt={contact.name}
-                      size="md"
-                      isOnline={contact.isOnline}
-                    />
-                    <div className="ml-3 flex-1">
-                      <h3 className="font-medium text-gray-900">
-                        {contact.name}
-                      </h3>
-                      <p className="text-sm text-gray-600">{contact.phone}</p>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
