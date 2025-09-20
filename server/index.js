@@ -749,13 +749,15 @@ app.post(
       Date.now() + 1 * 60 * 60 * 1000
     ).toISOString();
 
-    // Insert call log with actual callee_id (never NULL)
-    const insertSql = `INSERT INTO call_logs (caller_id, callee_id, channel, direction, status, started_at) 
-                       VALUES (?, ?, ?, ?, 'completed', ?)`;
+    // Insert call log with actual contact information
+    const insertSql = `INSERT INTO call_logs (caller_id, callee_id, called_name, callee_phone, channel, direction, status, started_at) 
+                       VALUES (?, ?, ?, ?, ?, ?, 'received', ?)`;
 
     const result = await dbRun(insertSql, [
       req.user.id,
       calleeId,
+      calleeName || "Unknown Contact",
+      calleePhone,
       channel || null,
       direction,
       nigerianTime,
@@ -768,7 +770,7 @@ app.post(
       callee_id: calleeId,
       channel: channel || null,
       direction: direction,
-      status: "completed",
+      status: "received",
       started_at: nigerianTime,
     });
   })
@@ -779,7 +781,7 @@ app.get("/api/call-logs", authenticateJWT, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get call logs with user information and handle non-registered contacts
+    // Get call logs with stored contact information
     const rows = await new Promise((resolve, reject) => {
       db.all(
         `SELECT 
@@ -794,13 +796,13 @@ app.get("/api/call-logs", authenticateJWT, async (req, res) => {
           cl.duration,
           CASE 
             WHEN cl.caller_id = ? THEN 
-              COALESCE(callee.name, 'Unknown Contact')
+              COALESCE(cl.called_name, callee.name, 'Unknown Contact')
             ELSE 
               COALESCE(caller.name, 'Unknown Caller')
           END as contact_name,
           CASE 
             WHEN cl.caller_id = ? THEN 
-              COALESCE(callee.phone, 'Unknown')
+              COALESCE(cl.callee_phone, callee.phone, 'Unknown')
             ELSE 
               COALESCE(caller.phone, 'Unknown')
           END as contact_phone,
@@ -823,40 +825,8 @@ app.get("/api/call-logs", authenticateJWT, async (req, res) => {
       );
     });
 
-    // For calls to temporary/placeholder users, get actual contact info
-    const enhancedRows = await Promise.all(
-      rows.map(async (row) => {
-        // Check if this is a call to the temporary placeholder user
-        if (
-          row.caller_id === userId &&
-          (row.contact_phone === "temp_non_registered" ||
-            row.contact_name === "Non-registered User")
-        ) {
-          // This is a call to a non-registered user, get the most recent contact info
-          // Since we can't store the actual phone in call_logs due to schema constraints,
-          // we'll get the most recently added contact as a best guess
-          const mostRecentContact = await dbGet(
-            `SELECT name, phone, avatar FROM contacts 
-             WHERE owner_id = ? 
-             ORDER BY created_at DESC LIMIT 1`,
-            [userId]
-          );
-
-          if (mostRecentContact) {
-            return {
-              ...row,
-              contact_name: mostRecentContact.name,
-              contact_phone: mostRecentContact.phone,
-              contact_avatar: mostRecentContact.avatar || "default.png",
-            };
-          }
-        }
-        return row;
-      })
-    );
-
-    // Transform to frontend format
-    const transformedLogs = enhancedRows.map((row) => ({
+    // Transform to frontend format (no complex enhancement needed since we store contact info directly)
+    const transformedLogs = rows.map((row) => ({
       id: String(row.id),
       contactId: String(row.callee_id || `temp_${row.id}`),
       contactName: row.contact_name || "Unknown",

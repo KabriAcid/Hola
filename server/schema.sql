@@ -81,7 +81,7 @@ CREATE TABLE call_logs (
   ended_at DATETIME,
   channel TEXT,
   direction TEXT CHECK(direction IN ('incoming', 'outgoing')) NOT NULL,
-  status TEXT CHECK(status IN ('completed', 'missed', 'failed')) DEFAULT 'completed',
+  status TEXT CHECK(status IN ('received', 'missed', 'failed')) DEFAULT 'received',
   duration INTEGER, -- seconds
   FOREIGN KEY (caller_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
   FOREIGN KEY (callee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE

@@ -69,6 +69,16 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
   const [callLogs, setCallLogs] = React.useState<CallLog[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [currentTime, setCurrentTime] = React.useState(new Date());
+
+  // Update current time every 30 seconds to refresh relative timestamps
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 30000); // Update every 30 seconds
+
+    return () => clearInterval(timer);
+  }, []);
 
   React.useEffect(() => {
     setLoading(true);
@@ -119,44 +129,47 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
     }
   };
 
-  const formatTime = (date: Date | string) => {
-    if (!date) return "Unknown time";
+  const formatTime = React.useCallback(
+    (date: Date | string) => {
+      if (!date) return "Unknown time";
 
-    const d = typeof date === "string" ? new Date(date) : date;
+      const d = typeof date === "string" ? new Date(date) : date;
 
-    // Check if date is valid
-    if (isNaN(d.getTime())) {
-      return "Invalid date";
-    }
+      // Check if date is valid
+      if (isNaN(d.getTime())) {
+        return "Invalid date";
+      }
 
-    const now = new Date();
-    const diff = now.getTime() - d.getTime();
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
+      const now = currentTime; // Use state instead of new Date()
+      const diff = now.getTime() - d.getTime();
+      const seconds = Math.floor(diff / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
 
-    // iPhone-style time formatting
-    if (seconds < 60) {
-      return "Just now";
-    } else if (minutes < 60) {
-      return `${minutes}m ago`;
-    } else if (hours < 24) {
-      return `${hours}h ago`;
-    } else if (days === 1) {
-      return "Yesterday";
-    } else if (days < 7) {
-      // Show day of week for recent days
-      return d.toLocaleDateString("en-US", { weekday: "long" });
-    } else {
-      // For older dates, show abbreviated format
-      return d.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: now.getFullYear() !== d.getFullYear() ? "numeric" : undefined,
-      });
-    }
-  };
+      // iPhone-style time formatting
+      if (seconds < 60) {
+        return "Just now";
+      } else if (minutes < 60) {
+        return `${minutes}m ago`;
+      } else if (hours < 24) {
+        return `${hours}h ago`;
+      } else if (days === 1) {
+        return "Yesterday";
+      } else if (days < 7) {
+        // Show day of week for recent days
+        return d.toLocaleDateString("en-US", { weekday: "long" });
+      } else {
+        // For older dates, show abbreviated format
+        return d.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: now.getFullYear() !== d.getFullYear() ? "numeric" : undefined,
+        });
+      }
+    },
+    [currentTime]
+  );
 
   const formatDuration = (seconds?: number) => {
     if (!seconds) return "";
