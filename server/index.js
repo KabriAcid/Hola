@@ -541,8 +541,11 @@ app.put(
     }
     let safeEmail = existing.email;
     if (email !== undefined) safeEmail = email ? xss(email.trim()) : null;
-    let safeIsFavorite =
-      typeof isFavorite !== "undefined" ? "0" : existing.is_favorite;
+    let safeIsFavorite = existing.is_favorite;
+    if (typeof isFavorite !== "undefined") {
+      safeIsFavorite =
+        isFavorite === true || isFavorite === "1" || isFavorite === 1 ? 1 : 0;
+    }
     // Update contact
     const updateSql = `UPDATE contacts SET name = ?, phone = ?, avatar = ?, email = ?, is_favorite = ?, updated_at = datetime('now') WHERE id = ? AND owner_id = ?`;
     await dbRun(updateSql, [

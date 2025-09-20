@@ -123,7 +123,6 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     <div className="flex flex-col h-full bg-white">
       {/* Single Header */}
       <div className="px-4 py-3 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-black mb-3">Messages</h1>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-gray-400" />
