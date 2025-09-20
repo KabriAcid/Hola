@@ -26,3 +26,4 @@ dist-ssr
 *.sqlite
 *.sqlite3
 config.ts
+assets/avatars/

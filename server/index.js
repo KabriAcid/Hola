@@ -684,13 +684,11 @@ app.post(
         safeEmail,
         safeIsFavorite,
       ]);
-      console.error("[POST /api/contacts] Inserted contact ID:", result.lastID);
       // Return the created contact
       const contact = await dbGet(
         `SELECT id, name, phone, avatar, is_favorite as isFavorite, email, created_at, updated_at FROM contacts WHERE id = ?`,
         [result.lastID]
       );
-      console.error("[POST /api/contacts] Returning contact:", contact);
       res.status(201).json(contact);
     } catch (err) {
       console.error("[POST /api/contacts] DB Error:", err);

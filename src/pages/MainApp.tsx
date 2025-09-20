@@ -23,6 +23,17 @@ import { useCall } from "../hooks/useCall";
 import { getSocket } from "../socket";
 import { apiService } from "../services/api";
 import { Contact, CallLog, Conversation, Message } from "../types";
+
+// Legacy message type for backward compatibility
+interface LegacyMessage {
+  id: string;
+  contactId: string;
+  content: string;
+  timestamp: Date;
+  isOutgoing: boolean;
+  isRead: boolean;
+  message_type?: string;
+}
 import { useAgoraAudio } from "../hooks/useAgoraAudio";
 
 export const MainApp: React.FC = () => {
@@ -178,7 +189,7 @@ export const MainApp: React.FC = () => {
   // );
   const callLogs: CallLog[] = [];
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<LegacyMessage[]>([]);
 
   const [showContactForm, setShowContactForm] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | undefined>();
@@ -190,32 +201,47 @@ export const MainApp: React.FC = () => {
   // Force refresh of ContactList (which self-fetches) after add/update
   const [contactsRefreshKey, setContactsRefreshKey] = useState(0);
 
-  // Load contacts from backend
+  // Load contacts and conversations from backend
   useEffect(() => {
-    setContactsLoading(true);
-    setContactsError(null);
-    fetch("/api/contacts", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
-      },
-    })
-      .then((res) => {
+    const loadData = async () => {
+      setContactsLoading(true);
+      setContactsError(null);
+
+      try {
+        // Load contacts
+        const res = await fetch("/api/contacts", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
+          },
+        });
+
         if (!res.ok) throw new Error("Failed to fetch contacts");
-        return res.json();
-      })
-      .then((data) => {
+        const contactData = await res.json();
+
         // Ensure all contact IDs are strings
-        const contactsWithStringIds = data.map((contact) => ({
+        const contactsWithStringIds = contactData.map((contact) => ({
           ...contact,
           id: String(contact.id),
         }));
         setContacts(contactsWithStringIds);
+
+        // Load conversations
+        try {
+          const conversationsData = await apiService.getConversations();
+          setConversations(conversationsData);
+        } catch (convError) {
+          console.warn("Failed to load conversations:", convError);
+          // Don't throw here as contacts loaded successfully
+        }
+
         setContactsLoading(false);
-      })
-      .catch((err) => {
-        setContactsError(err.message || "Error loading contacts");
+      } catch (err) {
+        setContactsError(err.message || "Error loading data");
         setContactsLoading(false);
-      });
+      }
+    };
+
+    loadData();
   }, []);
 
   const handleCall = async (phone: string, name: string) => {
@@ -372,36 +398,22 @@ export const MainApp: React.FC = () => {
   const handleSendMessage = async (contactId: string, content: string) => {
     try {
       const newMessage = await apiService.sendMessage(contactId, content);
-      const messageWithId = { ...newMessage, id: `msg_${Date.now()}` };
-      setMessages((prev) => [...prev, messageWithId]);
 
-      // Update conversation
-      const contact = contacts.find((c) => c.id === contactId);
-      if (contact) {
-        setConversations((prev) => {
-          const existingConv = prev.find((c) => c.contactId === contactId);
-          if (existingConv) {
-            return prev.map((c) =>
-              c.contactId === contactId
-                ? { ...c, lastMessage: messageWithId, unreadCount: 0 }
-                : c
-            );
-          } else {
-            return [
-              ...prev,
-              {
-                id: `conv_${Date.now()}`,
-                contactId,
-                contactName: contact.name,
-                contactPhone: contact.phone,
-                contactAvatar: contact.avatar,
-                lastMessage: messageWithId,
-                unreadCount: 0,
-              },
-            ];
-          }
-        });
-      }
+      // Convert to legacy message format for compatibility
+      const legacyMessage: LegacyMessage = {
+        id: `msg_${Date.now()}`,
+        contactId,
+        content,
+        timestamp: new Date(),
+        isOutgoing: true,
+        isRead: true,
+        message_type: newMessage.message_type || "text",
+      };
+
+      setMessages((prev) => [...prev, legacyMessage]);
+
+      // For now, skip conversation updates since we're using legacy format
+      // This will be handled properly when we fully migrate to the new system
     } catch (error) {
       console.error("Failed to send message:", error);
     }
@@ -500,7 +512,7 @@ export const MainApp: React.FC = () => {
             >
               <ChatScreen
                 contact={selectedContact}
-                messages={contactMessages}
+                messages={contactMessages as any}
                 onSendMessage={(content) =>
                   handleSendMessage(selectedContactId, content)
                 }
@@ -580,7 +592,14 @@ export const MainApp: React.FC = () => {
                     className="h-full"
                   >
                     <ConversationList
-                      onSelectConversation={handleSelectConversation}
+                      conversations={conversations}
+                      onSelectConversation={(conversationId) =>
+                        handleSelectConversation(String(conversationId))
+                      }
+                      onStartNewConversation={(contactId) =>
+                        handleSelectConversation(String(contactId))
+                      }
+                      loading={contactsLoading}
                     />
                   </motion.div>
                 }

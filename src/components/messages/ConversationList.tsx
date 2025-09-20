@@ -14,7 +14,7 @@ interface ConversationListProps {
 }
 
 export const ConversationList: React.FC<ConversationListProps> = ({
-  conversations,
+  conversations = [],
   onSelectConversation,
   onStartNewConversation,
   loading = false,
@@ -119,6 +119,14 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   // Get conversation display info
   const getConversationInfo = (conversation: Conversation) => {
+    if (!conversation) {
+      return {
+        name: "Unknown",
+        avatar: undefined,
+        status: "Offline",
+      };
+    }
+
     if (conversation.type === "group") {
       return {
         name: conversation.name || "Group Chat",
@@ -193,9 +201,10 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           <div className="flex items-center justify-center p-8">
             <div className="text-gray-500">Loading conversations...</div>
           </div>
-        ) : conversations.length > 0 ? (
+        ) : conversations && conversations.length > 0 ? (
           conversations
             .filter((conversation) => {
+              if (!conversation) return false;
               if (!searchQuery) return true;
               const info = getConversationInfo(conversation);
               return info.name
@@ -203,6 +212,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 .includes(searchQuery.toLowerCase());
             })
             .map((conversation, index) => {
+              if (!conversation) return null;
               const info = getConversationInfo(conversation);
               return (
                 <motion.div
@@ -243,7 +253,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                       <h3 className="font-semibold text-gray-900 truncate">
                         {info.name}
                       </h3>
-                      {conversation.last_message && (
+                      {conversation.last_message?.created_at && (
                         <span className="text-xs text-gray-500">
                           {formatTime(conversation.last_message.created_at)}
                         </span>
@@ -256,14 +266,14 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                           <>
                             {conversation.last_message.is_own && "You: "}
                             {conversation.last_message.message_type === "text"
-                              ? conversation.last_message.content
+                              ? conversation.last_message.content || "Message"
                               : `${
                                   conversation.last_message.message_type
-                                    .charAt(0)
-                                    .toUpperCase() +
-                                  conversation.last_message.message_type.slice(
-                                    1
-                                  )
+                                    ?.charAt(0)
+                                    ?.toUpperCase() +
+                                    conversation.last_message.message_type?.slice(
+                                      1
+                                    ) || "Message"
                                 } message`}
                           </>
                         ) : (

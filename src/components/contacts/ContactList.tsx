@@ -338,9 +338,7 @@ export const ContactList: React.FC<ContactListProps> = ({
                       c.id === editContact.id ? updatedContact : c
                     )
                   );
-                  console.log("[EditContact] Updated contact:", updatedContact);
                 } else {
-                  console.log("[AddContact] Adding contact:", contact);
                   const newContact = await apiService.addContact({
                     name: contact.name,
                     phone: contact.phone,
@@ -352,20 +350,14 @@ export const ContactList: React.FC<ContactListProps> = ({
                   });
                   setContacts((prev) => {
                     const updated = [...prev, newContact];
-                    console.log(
-                      "[AddContact] Updated contacts array:",
-                      updated
-                    );
                     return updated;
                   });
-                  console.log("[AddContact] Added contact:", newContact);
                 }
 
                 // Clear any previous errors and force close modal
                 setError(null);
                 setShowAddModal(false);
                 setEditContact(null);
-                console.log("[ContactList] Modal closed and form reset");
               } catch (err) {
                 console.error(
                   editContact ? "[EditContact] Error:" : "[AddContact] Error:",
