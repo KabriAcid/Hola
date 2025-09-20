@@ -10,6 +10,9 @@ const {
   validateRequest,
 } = require("../middleware/auth");
 
+// Agora token generation
+const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
+
 const router = express.Router();
 
 // ============================================================================
@@ -164,15 +167,16 @@ router.get(
       };
     });
 
-    res.json({
-      callLogs: processedLogs,
-      pagination: result.pagination,
-      filters: {
-        type: type || null,
-        status: status || null,
-        search: search || null,
-      },
+    // Return direct array for frontend compatibility
+    // Include pagination info in headers for advanced clients
+    res.set({
+      "X-Total-Count": result.pagination.total,
+      "X-Page": result.pagination.page,
+      "X-Per-Page": result.pagination.pageSize,
+      "X-Total-Pages": result.pagination.totalPages,
     });
+
+    res.json(processedLogs);
   })
 );
 
@@ -512,6 +516,74 @@ router.get(
         totalDuration: stats.total_duration || 0,
       },
     });
+  })
+);
+
+// ============================================================================
+// AGORA TOKEN GENERATION
+// ============================================================================
+
+/**
+ * GET /api/agora-token
+ * Generate Agora RTC token for voice calls
+ */
+router.get(
+  "/agora-token",
+  authenticateJWT,
+  asyncHandler(async (req, res) => {
+    const { channel, uid } = req.query;
+
+    console.log(
+      `[AGORA] Token request - Channel: ${channel}, UID: ${uid}, User: ${req.user?.phone}`
+    );
+
+    if (!channel || !uid) {
+      return sendError(res, 400, "Channel and UID are required");
+    }
+
+    const appId = process.env.AGORA_APP_ID;
+    const appCertificate = process.env.AGORA_APP_CERTIFICATE;
+
+    if (!appId || !appCertificate) {
+      console.error("Missing Agora credentials:", {
+        appId: !!appId,
+        appCertificate: !!appCertificate,
+      });
+      return sendError(res, 500, "Agora service not configured");
+    }
+
+    try {
+      const role = RtcRole.PUBLISHER;
+      const expirationTimeInSeconds = 3600; // 1 hour
+      const currentTimestamp = Math.floor(Date.now() / 1000);
+      const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
+
+      // Generate token
+      const token = RtcTokenBuilder.buildTokenWithUid(
+        appId,
+        appCertificate,
+        channel,
+        parseInt(uid) || 0,
+        role,
+        privilegeExpiredTs
+      );
+
+      console.log(
+        `[AGORA] Token generated for channel: ${channel}, uid: ${uid}`
+      );
+
+      res.json({
+        token,
+        appId,
+        channel,
+        uid,
+        expiresAt: privilegeExpiredTs,
+        role: "publisher",
+      });
+    } catch (error) {
+      console.error("Agora token generation error:", error);
+      return sendError(res, 500, "Failed to generate Agora token");
+    }
   })
 );
 

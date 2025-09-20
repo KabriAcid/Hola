@@ -92,10 +92,24 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
       },
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch call logs");
+        if (!res.ok) {
+          throw new Error(
+            `Failed to fetch call logs: ${res.status} ${res.statusText}`
+          );
+        }
         return res.json();
       })
       .then((data) => {
+        console.log("Call logs API response:", data);
+
+        // Ensure data is an array
+        if (!Array.isArray(data)) {
+          console.warn("Call logs API returned non-array:", data);
+          setCallLogs([]);
+          setLoading(false);
+          return;
+        }
+
         // Backend now returns properly formatted data
         const mapped = data.map((item: any) => ({
           id: String(item.id),
@@ -114,6 +128,7 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
         setLoading(false);
       })
       .catch((err) => {
+        console.error("Call logs fetch error:", err);
         setError(err.message || "Error loading call logs");
         setLoading(false);
       });
@@ -198,44 +213,44 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
 
   return (
     <>
-      {/* Search Header */}
-      <div className="p-4 border-b border-gray-200 bg-white">
+      {/* Search Header - Standardized */}
+      <div className="px-4 py-3 border-b border-gray-200">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
+            <Search className="h-4 w-4 text-gray-400" />
           </div>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search call history..."
-            className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-full leading-5 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:bg-white focus:border-black focus:ring-0 text-base"
+            className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-400 focus:outline-none focus:border-black text-sm"
           />
-          {searchQuery && (
-            <button
-              onClick={clearSearch}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-            >
-              <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-            </button>
-          )}
         </div>
-        {searchQuery && (
-          <div className="mt-2 text-sm text-gray-600">
-            {filteredCallLogs.length} result
-            {filteredCallLogs.length !== 1 ? "s" : ""} for "{searchQuery}"
-          </div>
-        )}
       </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="p-4 bg-red-50 border-b border-red-100">
+          <div className="text-red-700 text-sm mb-2">{error}</div>
+          <button
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              // Retry the fetch logic here
+              window.location.reload();
+            }}
+            className="text-red-600 text-sm hover:text-red-800 underline"
+          >
+            Try again
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto scrollbar-none">
         {loading ? (
           <div className="flex-1 flex items-center justify-center p-8">
             <LoadingSpinner size="lg" />
-          </div>
-        ) : error ? (
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="text-center text-red-500">{error}</div>
           </div>
         ) : filteredCallLogs.length === 0 && searchQuery ? (
           <div className="flex-1 flex items-center justify-center p-8">
@@ -251,8 +266,8 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
                 term.
               </p>
               <motion.button
-                onClick={clearSearch}
-                className="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium"
+                onClick={() => setSearchQuery("")}
+                className="inline-block px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
                 whileTap={{ scale: 0.95 }}
               >
                 Clear search
@@ -274,7 +289,7 @@ export const RecentCallsList: React.FC<RecentCallsListProps> = ({
               </p>
               <motion.button
                 onClick={() => navigate("/app/contacts")}
-                className="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium"
+                className="inline-block px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
                 whileTap={{ scale: 0.95 }}
               >
                 Make your first call

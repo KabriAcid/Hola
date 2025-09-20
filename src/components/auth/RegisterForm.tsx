@@ -83,7 +83,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       await onRegister(formData.name, formData.phone, formData.password);
       // Do not redirect here; wait for verification to complete
     } catch (error) {
-      setErrors({ general: "Registration failed. Please try again." });
+      // Show the specific error message from the server
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Registration failed. Please try again.";
+      setErrors({ general: errorMessage });
     }
   };
 

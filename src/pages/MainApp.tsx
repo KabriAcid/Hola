@@ -73,10 +73,16 @@ export const MainApp: React.FC = () => {
     let cancelled = false;
     (async () => {
       try {
+        const token = localStorage.getItem("jwt");
         const res = await fetch(
           `/api/agora-token?channel=${encodeURIComponent(
             callChannel
-          )}&uid=${encodeURIComponent(user.phone)}`
+          )}&uid=${encodeURIComponent(user.phone)}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+            },
+          }
         );
         if (!res.ok) {
           const text = await res.text();

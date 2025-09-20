@@ -48,17 +48,27 @@ function authenticateJWT(req, res, next) {
     try {
       // Verify user still exists and is verified
       const user = await dbGet(
-        "SELECT id, phone, name, username, is_verified FROM users WHERE id = ? AND is_verified = TRUE",
+        "SELECT id, phone, name, username, is_verified FROM users WHERE id = ? AND is_verified = 1",
         [decoded.id]
       );
 
       if (!user) {
+        console.error("Auth error: User not found or not verified", {
+          decodedId: decoded.id,
+          timestamp: new Date().toISOString(),
+        });
         return sendError(res, 401, "User not found or not verified");
       }
 
       req.user = user;
       next();
     } catch (error) {
+      console.error("Authentication database error:", {
+        message: error.message,
+        stack: error.stack,
+        decodedId: decoded?.id,
+        timestamp: new Date().toISOString(),
+      });
       return sendError(res, 500, "Authentication error", error.message);
     }
   });
@@ -83,7 +93,7 @@ function optionalAuth(req, res, next) {
     } else {
       try {
         const user = await dbGet(
-          "SELECT id, phone, name, username, is_verified FROM users WHERE id = ? AND is_verified = TRUE",
+          "SELECT id, phone, name, username, is_verified FROM users WHERE id = ? AND is_verified = '1'",
           [decoded.id]
         );
         req.user = user;

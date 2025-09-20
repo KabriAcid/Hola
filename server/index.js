@@ -108,7 +108,8 @@ app.use("/api", authRoutes); // Handles: /api/login, /api/register
 app.use("/api", messageRoutes); // Handles: /api/conversations, /api/messages
 app.use("/api/users", userRoutes);
 app.use("/api/contacts", contactRoutes);
-app.use("/api/call-logs", callRoutes);
+app.use("/api/call-logs", callRoutes); // Handles: /api/call-logs/*
+app.use("/api", callRoutes); // Handles: /api/agora-token
 
 // ============================================================================
 // ERROR HANDLING
@@ -128,12 +129,16 @@ app.use((error, req, res, next) => {
   const timestamp = new Date().toISOString();
   const isDevelopment = process.env.NODE_ENV === "development";
 
-  console.error("[ERROR]", {
+  console.error("[GLOBAL ERROR]", {
     message: error.message,
-    stack: error.stack,
+    stack: isDevelopment ? error.stack : error.stack.split("\n")[0],
     path: req.path,
+    originalUrl: req.originalUrl,
     method: req.method,
+    userAgent: req.get("User-Agent"),
     timestamp,
+    headers: isDevelopment ? req.headers : undefined,
+    body: isDevelopment && req.method !== "GET" ? req.body : undefined,
   });
 
   res.status(error.status || 500).json({

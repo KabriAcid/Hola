@@ -19,16 +19,19 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactsError, setContactsError] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   // Load contacts for new chat
   useEffect(() => {
     const loadContacts = async () => {
       try {
+        setContactsError(null);
         const allContacts = await apiService.getContacts();
         setContacts(allContacts);
       } catch (error) {
         console.error("Error loading contacts:", error);
+        setContactsError((error as Error).message || "Failed to load contacts");
         setContacts([]);
       }
     };
@@ -105,10 +108,10 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     };
   }, []);
 
-  // Sort contacts alphabetically
-  const sortedContacts = [...contacts].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
+  // Sort contacts alphabetically (ensure contacts is an array)
+  const sortedContacts = Array.isArray(contacts)
+    ? [...contacts].sort((a, b) => a.name.localeCompare(b.name))
+    : [];
 
   // Filter contacts based on search query
   const filteredContacts = searchQuery

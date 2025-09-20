@@ -156,23 +156,16 @@ router.get(
 
     const formattedContacts = contacts.map(formatContactResponse);
 
-    res.json({
-      contacts: formattedContacts,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
-      },
-      filters: {
-        search: search || null,
-        favoriteOnly,
-        sortBy,
-        sortOrder,
-      },
+    // Return direct array for frontend compatibility
+    // Include pagination info in headers for advanced clients
+    res.set({
+      "X-Total-Count": total,
+      "X-Page": page,
+      "X-Per-Page": limit,
+      "X-Total-Pages": totalPages,
     });
+
+    res.json(formattedContacts);
   })
 );
 

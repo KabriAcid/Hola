@@ -138,13 +138,38 @@ export const apiService = {
   // Contacts
   async getContacts(): Promise<Contact[]> {
     const token = this.getToken();
-    const res = await fetch("/api/contacts", {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : "",
-      },
-    });
-    if (!res.ok) throw new Error("Failed to fetch contacts");
-    return await res.json();
+    try {
+      const res = await fetch("/api/contacts", {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => "Unknown error");
+        console.error("Contacts API error:", {
+          status: res.status,
+          statusText: res.statusText,
+          error: errorText,
+        });
+        throw new Error(
+          `Failed to fetch contacts: ${res.status} ${res.statusText}`
+        );
+      }
+
+      const data = await res.json();
+
+      // Ensure we return an array
+      if (!Array.isArray(data)) {
+        console.warn("Contacts API returned non-array:", data);
+        return [];
+      }
+
+      return data;
+    } catch (error) {
+      console.error("getContacts error:", error);
+      throw error;
+    }
   },
 
   async addContact(

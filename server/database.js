@@ -7,7 +7,7 @@ require("dotenv").config({
 const pool = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
-  password: process.env.DB_PASS || "",
+  password: process.env.DB_PASSWORD || "", // Fixed: was DB_PASS, now DB_PASSWORD
   database: process.env.DB_NAME || "hola_app",
   port: process.env.DB_PORT || 3306,
   waitForConnections: true,
@@ -44,7 +44,12 @@ async function dbGet(sql, params = []) {
     const [rows] = await pool.execute(sql, params);
     return rows.length > 0 ? rows[0] : null;
   } catch (error) {
-    console.error("Database GET error:", error.message);
+    console.error("Database GET error:", {
+      message: error.message,
+      sql: sql.substring(0, 100) + "...",
+      params,
+      stack: error.stack,
+    });
     throw error;
   }
 }
@@ -81,7 +86,12 @@ async function dbAll(sql, params = []) {
     const [rows] = await pool.execute(sql, params);
     return rows;
   } catch (error) {
-    console.error("Database ALL error:", error.message);
+    console.error("Database ALL error:", {
+      message: error.message,
+      sql: sql.substring(0, 100) + "...",
+      params,
+      stack: error.stack,
+    });
     throw error;
   }
 }

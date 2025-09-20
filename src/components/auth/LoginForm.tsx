@@ -56,7 +56,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       await onLogin(formData.phone, formData.password);
       // Navigation will be handled in AuthPage after authentication
     } catch (error) {
-      setErrors({ general: "Invalid phone number or password" });
+      // Show the specific error message from the server
+      const errorMessage =
+        error instanceof Error ? error.message : "Login failed";
+      setErrors({ general: errorMessage });
     }
   };
 
@@ -64,7 +67,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     try {
       await onTruecallerLogin();
     } catch (error) {
-      setErrors({ general: "Truecaller login failed" });
+      // Show the specific error message from the server
+      const errorMessage =
+        error instanceof Error ? error.message : "Truecaller login failed";
+      setErrors({ general: errorMessage });
     }
   };
 

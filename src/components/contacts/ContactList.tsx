@@ -253,32 +253,54 @@ export const ContactList: React.FC<ContactListProps> = ({
 
   return (
     <div className="flex-1 overflow-y-auto">
+      {/* Search Field - Always visible */}
+      <div className="px-4 py-3 border-b border-gray-200 bg-white">
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            placeholder="Search contacts..."
+            className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-400 focus:outline-none focus:border-black text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="p-4 bg-red-50 border-b border-red-100">
+          <div className="text-red-700 text-sm mb-2">{error}</div>
+          <button
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              apiService
+                .getContacts()
+                .then((data) => {
+                  setContacts(data);
+                  setLoading(false);
+                })
+                .catch((err) => {
+                  setError(err.message || "Error loading contacts");
+                  setLoading(false);
+                });
+            }}
+            className="text-red-600 text-sm hover:text-red-800 underline"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex-1 flex items-center justify-center p-8">
           <LoadingSpinner size="md" />
         </div>
-      ) : error ? (
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center text-red-500">{error}</div>
-        </div>
       ) : (
         <>
-          {/* Search Field */}
-          <div className="px-4 py-3 border-b border-gray-200 bg-white">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                placeholder="Search contacts..."
-                className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-400 focus:outline-none focus:border-black text-sm"
-              />
-            </div>
-          </div>
-
           {favorites.length > 0 && (
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-black px-4 py-2 bg-gray-50">
