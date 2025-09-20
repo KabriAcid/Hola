@@ -744,10 +744,8 @@ app.post(
       calleeId = calleeUser.id;
     }
 
-    // Use current timestamp with timezone adjustment for Nigeria (UTC+1)
-    const nigerianTime = new Date(
-      Date.now() + 1 * 60 * 60 * 1000
-    ).toISOString();
+    // Use current UTC timestamp (let frontend handle timezone display)
+    const timestamp = new Date().toISOString();
 
     // Insert call log with actual contact information
     const insertSql = `INSERT INTO call_logs (caller_id, callee_id, called_name, callee_phone, channel, direction, status, started_at) 
@@ -771,7 +769,7 @@ app.post(
       channel: channel || null,
       direction: direction,
       status: "received",
-      started_at: nigerianTime,
+      started_at: timestamp,
     });
   })
 );
