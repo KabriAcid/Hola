@@ -283,7 +283,7 @@ app.post(
     // Save verification code in verification_codes table (delete old first)
     await dbRun(`DELETE FROM verification_codes WHERE user_id = ?`, [userId]);
     await dbRun(
-      `INSERT INTO verification_codes (user_id, code, created_at) VALUES (?, ?, datetime('now'))`,
+      `INSERT INTO verification_codes (user_id, code, expires_at, created_at) VALUES (?, ?, datetime('now', '+10 minutes'), datetime('now'))`,
       [userId, verificationCode]
     );
     // Log the code for debugging
@@ -308,21 +308,24 @@ app.post(
   asyncHandler(async (req, res) => {
     const { phone, code } = req.body;
     if (!phone || !code) return sendError(res, 400, "Missing phone or code");
-    // Find user and code
+    // Find user and code (check if not expired)
     const user = await dbGet(
       `SELECT u.id FROM users u
         JOIN verification_codes v ON v.user_id = u.id
-        WHERE u.phone = ? AND v.code = ? AND u.is_verified = 0`,
+        WHERE u.phone = ? AND v.code = ? AND u.is_verified = 0 AND v.expires_at > datetime('now') AND v.used = 0`,
       [phone, code]
     );
-    if (!user) return sendError(res, 400, "Invalid verification code");
+    if (!user)
+      return sendError(res, 400, "Invalid or expired verification code");
     // Mark user as verified and update last_login
     await dbRun(
       "UPDATE users SET is_verified = 1, last_login = datetime('now') WHERE id = ?",
       [user.id]
     );
-    // Delete verification code
-    await dbRun("DELETE FROM verification_codes WHERE code = ?", [code]);
+    // Mark verification code as used
+    await dbRun("UPDATE verification_codes SET used = 1 WHERE code = ?", [
+      code,
+    ]);
     return res.json({ success: true });
   })
 );
@@ -852,7 +855,7 @@ app.delete(
     const user = await dbGet(
       `SELECT u.id FROM users u
         JOIN verification_codes v ON v.user_id = u.id
-        WHERE v.code = ? AND u.is_verified = 0`,
+        WHERE v.code = ? AND u.is_verified = 0 AND v.used = 0`,
       [code]
     );
     if (!user) return sendError(res, 404, "No pending registration found");

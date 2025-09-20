@@ -79,25 +79,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     if (!validateForm()) return;
 
     try {
-      // Send POST request to backend
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          phone: formData.phone,
-          password: formData.password,
-        }),
-      });
-      const data = await response.json();
-      console.log("Backend response:", data);
-      if (!response.ok) {
-        setErrors({
-          general: data.error || "Registration failed. Please try again.",
-        });
-        return;
-      }
-      // Optionally, you can call onRegister to update parent state
+      // Use the onRegister prop to handle the registration
       await onRegister(formData.name, formData.phone, formData.password);
       // Do not redirect here; wait for verification to complete
     } catch (error) {
