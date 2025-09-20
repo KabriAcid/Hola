@@ -95,6 +95,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   // Handle contact selection
   const handleContactSelect = (contact: Contact) => {
     console.log("Contact selected:", contact);
+    console.log("Contact ID:", String(contact.id));
+    console.log("About to call onSelectConversation with:", String(contact.id));
     setShowDropdown(false);
     setSearchQuery("");
     setSearchResults([]);
@@ -198,10 +200,18 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.05 }}
                           className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
-                          onClick={() => handleContactSelect(contact)}
+                          onClick={(e) => {
+                            console.log(
+                              "Mobile search result clicked:",
+                              contact
+                            );
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleContactSelect(contact);
+                          }}
                         >
                           <Avatar
-                            src={contact.avatar}
+                            src={`/assets/avatars/${contact.avatar}`}
                             alt={contact.name}
                             size="md"
                             isOnline={contact.isOnline}
@@ -247,10 +257,15 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                     className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                    onClick={() => handleContactSelect(contact)}
+                    onClick={(e) => {
+                      console.log("Desktop search result clicked:", contact);
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleContactSelect(contact);
+                    }}
                   >
                     <Avatar
-                      src={contact.avatar}
+                      src={`/assets/avatars/${contact.avatar}`}
                       alt={contact.name}
                       size="md"
                       isOnline={contact.isOnline}
@@ -297,7 +312,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   <Avatar
                     src={`/assets/avatars/${contact.avatar}`}
                     alt={contact.name}
-                    size="lg"
+                    size="md"
                     isOnline={contact.isOnline}
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-full transition-all duration-200" />
