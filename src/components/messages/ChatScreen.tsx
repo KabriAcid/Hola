@@ -1,159 +1,181 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Send, Phone } from 'lucide-react';
-import { Message, Contact } from '../../types';
-import { Avatar } from '../ui/Avatar';
+import React, { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Message, Conversation } from "../../types";
+import ConversationHeader from "./ConversationHeader";
+import MessageBubble from "./MessageBubble";
+import MessageInput from "./MessageInput";
+import TypingIndicator from "./TypingIndicator";
+import { useAuth } from "../../hooks/useAuth";
 
 interface ChatScreenProps {
-  contact: Contact;
+  conversation: Conversation;
   messages: Message[];
-  onSendMessage: (content: string) => Promise<void>;
+  typingUsers?: Array<{
+    id: number;
+    full_name: string;
+    avatar?: string;
+  }>;
+  onSendMessage: (
+    content: string,
+    messageType?: "text" | "image" | "audio" | "file"
+  ) => Promise<void>;
   onBack: () => void;
-  onCall: (contact: Contact) => void;
+  onCall?: () => void;
+  onVideoCall?: () => void;
+  onTyping?: (isTyping: boolean) => void;
+  onMarkAsRead?: (messageId: number) => void;
 }
 
 export const ChatScreen: React.FC<ChatScreenProps> = ({
-  contact,
+  conversation,
   messages,
+  typingUsers = [],
   onSendMessage,
   onBack,
   onCall,
+  onVideoCall,
+  onTyping,
+  onMarkAsRead,
 }) => {
-  const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || isLoading) return;
+  // Mark messages as read when they come into view
+  useEffect(() => {
+    if (onMarkAsRead && messages.length > 0) {
+      const unreadMessages = messages.filter(
+        (msg) =>
+          !msg.is_own && msg.status?.every((status) => status.status !== "read")
+      );
 
-    const messageContent = newMessage.trim();
-    setNewMessage('');
+      unreadMessages.forEach((message) => {
+        onMarkAsRead(message.id);
+      });
+    }
+  }, [messages, onMarkAsRead]);
+
+  const handleSendMessage = async (
+    content: string,
+    messageType: "text" | "image" | "audio" | "file" = "text"
+  ) => {
+    if (!content.trim() || isLoading) return;
+
     setIsLoading(true);
 
     try {
-      await onSendMessage(messageContent);
+      await onSendMessage(content, messageType);
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error("Failed to send message:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+  const shouldShowAvatar = (message: Message, index: number) => {
+    if (message.is_own) return false;
+    if (conversation.type === "direct") return false;
+
+    // Show avatar if it's the last message from this sender in a group
+    const nextMessage = messages[index + 1];
+    return (
+      !nextMessage ||
+      nextMessage.sender_id !== message.sender_id ||
+      nextMessage.is_own
+    );
+  };
+
+  const shouldShowTimestamp = (message: Message, index: number) => {
+    if (index === 0) return true;
+
+    const prevMessage = messages[index - 1];
+    const currentTime = new Date(message.created_at);
+    const prevTime = new Date(prevMessage.created_at);
+
+    // Show timestamp if more than 10 minutes apart
+    return currentTime.getTime() - prevTime.getTime() > 10 * 60 * 1000;
+  };
+
+  const isMessageGrouped = (message: Message, index: number) => {
+    const prevMessage = messages[index - 1];
+    if (!prevMessage) return false;
+
+    const currentTime = new Date(message.created_at);
+    const prevTime = new Date(prevMessage.created_at);
+    const timeDiff = currentTime.getTime() - prevTime.getTime();
+
+    // Group if same sender and within 5 minutes
+    return (
+      prevMessage.sender_id === message.sender_id &&
+      timeDiff < 5 * 60 * 1000 &&
+      prevMessage.is_own === message.is_own
+    );
   };
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between p-4 border-b border-gray-200 bg-white"
-      >
-        <div className="flex items-center">
-          <motion.button
-            onClick={onBack}
-            className="p-2 -ml-2 mr-2 hover:bg-gray-100 rounded-full transition-colors"
-            whileTap={{ scale: 0.95 }}
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </motion.button>
-          
-          <Avatar
-            src={contact.avatar}
-            alt={contact.name}
-            size="md"
-            isOnline={contact.isOnline}
-          />
-          
-          <div className="ml-3">
-            <h2 className="font-semibold text-black">{contact.name}</h2>
-            <p className="text-sm text-gray-600">
-              {contact.isOnline ? 'Online' : 'Offline'}
-            </p>
-          </div>
-        </div>
-        
-        <motion.button
-          onClick={() => onCall(contact)}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          whileTap={{ scale: 0.95 }}
-        >
-          <Phone className="w-6 h-6 text-green-600" />
-        </motion.button>
-      </motion.div>
+      {/* Conversation Header */}
+      <ConversationHeader
+        conversation={conversation}
+        onBack={onBack}
+        onCall={onCall}
+        onVideoCall={onVideoCall}
+      />
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message, index) => (
-          <motion.div
-            key={message.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-            className={`flex ${message.isOutgoing ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                message.isOutgoing
-                  ? 'bg-black text-white rounded-br-md'
-                  : 'bg-gray-100 text-black rounded-bl-md'
-              }`}
+      {/* Messages Container */}
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto bg-gray-50"
+      >
+        <div className="px-4 py-2">
+          {messages.map((message, index) => (
+            <motion.div
+              key={message.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: Math.min(index * 0.02, 0.3) }}
             >
-              <p className="text-sm">{message.content}</p>
-              <p
-                className={`text-xs mt-1 ${
-                  message.isOutgoing ? 'text-gray-300' : 'text-gray-500'
-                }`}
-              >
-                {formatTime(message.timestamp)}
-              </p>
-            </div>
-          </motion.div>
-        ))}
-        <div ref={messagesEndRef} />
+              <MessageBubble
+                message={message}
+                isOwn={message.is_own || false}
+                showAvatar={shouldShowAvatar(message, index)}
+                showTimestamp={shouldShowTimestamp(message, index)}
+                isGrouped={isMessageGrouped(message, index)}
+              />
+            </motion.div>
+          ))}
+
+          {/* Typing Indicator */}
+          {typingUsers.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <TypingIndicator users={typingUsers} />
+            </motion.div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* Message Input */}
-      <motion.form
-        onSubmit={handleSendMessage}
-        className="p-4 border-t border-gray-200 bg-white"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="flex items-center space-x-3">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1 px-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:border-black transition-colors"
-            disabled={isLoading}
-          />
-          <motion.button
-            type="submit"
-            disabled={!newMessage.trim() || isLoading}
-            className="p-3 bg-black text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            whileTap={{ scale: 0.95 }}
-          >
-            <Send className="w-5 h-5" />
-          </motion.button>
-        </div>
-      </motion.form>
+      <MessageInput
+        onSendMessage={handleSendMessage}
+        onTyping={onTyping}
+        disabled={isLoading}
+        placeholder="Type a message..."
+      />
     </div>
   );
 };
