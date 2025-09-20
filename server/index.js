@@ -122,12 +122,12 @@ app.get("/api/env-health", (req, res) => {
   });
 });
 
-// Mount route modules
-app.use("/api/auth", authRoutes);
+// Mount route modules - matching frontend API calls exactly
+app.use("/api", authRoutes); // Frontend calls /api/login, /api/register
 app.use("/api/users", userRoutes);
 app.use("/api/contacts", contactRoutes);
-app.use("/api/calls", callRoutes);
-app.use("/api/messages", messageRoutes);
+app.use("/api/call-logs", callRoutes); // Frontend calls /api/call-logs
+app.use("/api", messageRoutes); // Frontend calls /api/conversations
 
 // ============================================================================
 // ERROR HANDLING
