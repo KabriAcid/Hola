@@ -751,7 +751,7 @@ app.post(
     const timestamp = new Date().toISOString();
 
     // Insert call log with actual contact information
-    const insertSql = `INSERT INTO call_logs (caller_id, callee_id, called_name, callee_phone, channel, direction, status, started_at) 
+    const insertSql = `INSERT INTO call_logs (caller_id, receiver_id, receiver_name, receiver_phone, channel, direction, status, started_at) 
                        VALUES (?, ?, ?, ?, ?, ?, 'received', ?)`;
 
     const result = await dbRun(insertSql, [
@@ -768,7 +768,7 @@ app.post(
     res.status(201).json({
       id: result.lastID,
       caller_id: req.user.id,
-      callee_id: calleeId,
+      receiver_id: calleeId,
       channel: channel || null,
       direction: direction,
       status: "received",
@@ -788,7 +788,7 @@ app.get("/api/call-logs", authenticateJWT, async (req, res) => {
         `SELECT 
           cl.id, 
           cl.caller_id, 
-          cl.callee_id, 
+          cl.receiver_id, 
           cl.channel, 
           cl.direction, 
           cl.status, 
@@ -797,26 +797,26 @@ app.get("/api/call-logs", authenticateJWT, async (req, res) => {
           cl.duration,
           CASE 
             WHEN cl.caller_id = ? THEN 
-              COALESCE(cl.called_name, callee.name, 'Unknown Contact')
+              COALESCE(cl.receiver_name, receiver.name, 'Unknown Contact')
             ELSE 
               COALESCE(caller.name, 'Unknown Caller')
           END as contact_name,
           CASE 
             WHEN cl.caller_id = ? THEN 
-              COALESCE(cl.callee_phone, callee.phone, 'Unknown')
+              COALESCE(cl.receiver_phone, receiver.phone, 'Unknown')
             ELSE 
               COALESCE(caller.phone, 'Unknown')
           END as contact_phone,
           CASE 
             WHEN cl.caller_id = ? THEN 
-              COALESCE(callee.avatar, 'default.png')
+              COALESCE(receiver.avatar, 'default.png')
             ELSE 
               COALESCE(caller.avatar, 'default.png')
           END as contact_avatar
         FROM call_logs cl
         LEFT JOIN users caller ON cl.caller_id = caller.id
-        LEFT JOIN users callee ON cl.callee_id = callee.id
-        WHERE cl.caller_id = ? OR cl.callee_id = ?
+        LEFT JOIN users receiver ON cl.receiver_id = receiver.id
+        WHERE cl.caller_id = ? OR cl.receiver_id = ?
         ORDER BY cl.started_at DESC`,
         [userId, userId, userId, userId, userId],
         (err, rows) => {
@@ -829,7 +829,7 @@ app.get("/api/call-logs", authenticateJWT, async (req, res) => {
     // Transform to frontend format (no complex enhancement needed since we store contact info directly)
     const transformedLogs = rows.map((row) => ({
       id: String(row.id),
-      contactId: String(row.callee_id || `temp_${row.id}`),
+      contactId: String(row.receiver_id || `temp_${row.id}`),
       contactName: row.contact_name || "Unknown",
       contactPhone: row.contact_phone || "",
       contactAvatar: row.contact_avatar || "default.png",
