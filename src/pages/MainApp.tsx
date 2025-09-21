@@ -569,13 +569,21 @@ export const MainApp: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white pb-16">
+    <div
+      className={`flex flex-col h-screen bg-white ${
+        selectedContactId ? "" : "pb-16"
+      }`}
+    >
       {/* Only show Header when not in a chat */}
       {!selectedContactId && (
         <Header title={getHeaderTitle()} {...getHeaderProps()} />
       )}
 
-      <div className="flex-1 overflow-y-auto pb-20 scrollbar-none">
+      <div
+        className={`flex-1 overflow-y-auto scrollbar-none ${
+          selectedContactId ? "" : "pb-20"
+        }`}
+      >
         <AnimatePresence mode="wait">
           {selectedContactId && selectedContact ? (
             <motion.div
