@@ -556,9 +556,7 @@ export const MainApp: React.FC = () => {
     const path = location.pathname;
     if (path.startsWith("/app/contacts")) {
       return {
-        showSearch: true,
         showAdd: true,
-        onSearch: () => console.log("Search"),
         onAdd: () => setShowContactForm(true),
       };
     }
