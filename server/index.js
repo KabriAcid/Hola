@@ -54,22 +54,12 @@ const corsOptions = {
     // Allow requests with no origin (mobile apps, postman, etc.)
     if (!origin) return callback(null, true);
 
-    // Allow any localhost or ngrok domains
-    if (
-      origin.includes("localhost") ||
-      origin.includes("ngrok") ||
-      origin.includes("ngrok.io") ||
-      origin.includes("ngrok-free.app")
-    ) {
+    // Allow localhost domains
+    if (origin.includes("localhost")) {
       return callback(null, true);
     }
 
-    // Allow specific frontend URL if set
-    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
-      return callback(null, true);
-    }
-
-    // Default fallback
+    // Default fallback for development
     callback(null, true);
   },
   credentials: true,

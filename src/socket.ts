@@ -16,53 +16,32 @@ class SocketService {
       return;
     }
 
-    console.log("[SOCKET] Attempting to connect to:", SOCKET_URL);
-
     this.socket = io(SOCKET_URL, {
-      transports: ["polling", "websocket"], // Try polling first for ngrok
-      timeout: 30000, // Increase timeout for ngrok
+      transports: ["websocket", "polling"],
+      timeout: 20000,
       forceNew: true,
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 3,
       reconnectionDelay: 1000,
-      // Add ngrok-specific headers
-      extraHeaders: {
-        "ngrok-skip-browser-warning": "true",
-      },
-      // For ngrok compatibility
-      upgrade: true,
-      rememberUpgrade: false,
     });
 
     this.socket.on("connect", () => {
-      console.log("[SOCKET] ✅ Connected successfully:", this.socket?.id);
-      console.log("[SOCKET] Transport:", this.socket?.io.engine.transport.name);
+      console.log("Socket connected:", this.socket?.id);
       // Register user with their phone number
       this.socket?.emit("register", userPhone);
-      console.log("[SOCKET] Registered user:", userPhone);
     });
 
     this.socket.on("connect_error", (error) => {
-      console.error("[SOCKET] ❌ Connection error:", error);
-      console.error("[SOCKET] Error details:", {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-      });
-      console.error("[SOCKET] Attempting to connect to:", SOCKET_URL);
-      console.error(
-        "[SOCKET] Make sure your server is running on port 5000 and ngrok is active"
-      );
+      // Silently handle connection errors to avoid console spam
     });
 
     this.socket.on("disconnect", (reason) => {
-      console.log("[SOCKET] ❌ Disconnected:", reason);
+      console.log("Socket disconnected:", reason);
     });
 
     // Listen for new messages
     this.socket.on("new-message", (message) => {
-      console.log("New message received:", message);
       this.messageCallbacks.forEach((callback) => callback(message));
 
       // Auto-mark as delivered
@@ -78,13 +57,11 @@ class SocketService {
 
     // Listen for message status updates
     this.socket.on("message-status-update", (update) => {
-      console.log("Message status update:", update);
       this.statusCallbacks.forEach((callback) => callback(update));
     });
 
     // Handle call events
     this.socket.on("call-incoming", (payload) => {
-      console.log("Incoming call:", payload);
       // Emit custom event for call handling
       window.dispatchEvent(
         new CustomEvent("hola-call-incoming", { detail: payload })
@@ -92,21 +69,18 @@ class SocketService {
     });
 
     this.socket.on("call-accepted", (payload) => {
-      console.log("Call accepted:", payload);
       window.dispatchEvent(
         new CustomEvent("hola-call-accepted", { detail: payload })
       );
     });
 
     this.socket.on("call-declined", (payload) => {
-      console.log("Call declined:", payload);
       window.dispatchEvent(
         new CustomEvent("hola-call-declined", { detail: payload })
       );
     });
 
     this.socket.on("call-ended", (payload) => {
-      console.log("Call ended:", payload);
       window.dispatchEvent(
         new CustomEvent("hola-call-ended", { detail: payload })
       );
