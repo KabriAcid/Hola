@@ -577,14 +577,20 @@ export const MainApp: React.FC = () => {
     return {};
   };
 
+  // Check if we're on a settings sub-page (not the main settings page)
+  const isSettingsSubPage = () => {
+    const path = location.pathname;
+    return path.startsWith("/app/settings/") && path !== "/app/settings";
+  };
+
   return (
     <div
       className={`flex flex-col h-screen bg-white ${
         selectedContactId ? "" : "pb-16"
       }`}
     >
-      {/* Only show Header when not in a chat */}
-      {!selectedContactId && (
+      {/* Only show Header when not in a chat and not on settings sub-pages */}
+      {!selectedContactId && !isSettingsSubPage() && (
         <Header title={getHeaderTitle()} {...getHeaderProps()} />
       )}
 

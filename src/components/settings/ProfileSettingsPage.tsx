@@ -109,7 +109,7 @@ export const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({
         avatar: avatarUrl,
       });
 
-      navigate("/settings");
+      navigate("/app/settings");
     } catch (error) {
       console.error("Failed to update profile:", error);
       setErrors({ general: "Failed to update profile. Please try again." });
@@ -274,7 +274,7 @@ export const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({
           <div className="flex space-x-3 pt-4">
             <Button
               variant="secondary"
-              onClick={() => navigate("/settings")}
+              onClick={() => navigate("/app/settings")}
               className="flex-1"
               disabled={isLoading}
             >
