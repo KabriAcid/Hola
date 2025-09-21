@@ -1,9 +1,24 @@
 export interface User {
   id: string;
-  name: string;
   phone: string;
+  email?: string;
+  name?: string;
+  username?: string;
   avatar?: string;
-  isOnline?: boolean;
+  bio?: string;
+  country?: string;
+  city?: string;
+  password?: string;
+  is_verified: boolean;
+  truecaller_id?: string;
+  status: "online" | "offline" | "away" | "busy";
+  last_seen: string;
+  custom_status?: string;
+  socket_id?: string;
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
+  isOnline?: boolean; // Derived from status
 }
 
 export interface Contact {
