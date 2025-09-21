@@ -62,9 +62,7 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
           {subtitle && (
             <p className="text-sm text-gray-500 truncate">{subtitle}</p>
           )}
-          {value && (
-            <p className="text-sm text-gray-500 truncate">{value}</p>
-          )}
+          {value && <p className="text-sm text-gray-500 truncate">{value}</p>}
         </div>
       </div>
 
@@ -107,7 +105,7 @@ const SettingsSection: React.FC<{
 
 export const CallSettingsPage: React.FC<CallSettingsPageProps> = () => {
   const navigate = useNavigate();
-  
+
   const [settings, setSettings] = useState({
     callNotifications: true,
     callSound: true,
@@ -124,17 +122,17 @@ export const CallSettingsPage: React.FC<CallSettingsPageProps> = () => {
   });
 
   const updateSetting = (key: string, value: boolean | string | number) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50">
-      <Header 
-        title="Voice & Calls" 
-        showBack 
-        onBack={() => navigate("/settings")} 
+      <Header
+        title="Voice & Calls"
+        showBack
+        onBack={() => navigate("/app/settings")}
       />
-      
+
       <div className="px-4 pt-4 pb-20">
         {/* Call Notifications */}
         <SettingsSection title="Call Notifications">
@@ -249,9 +247,12 @@ export const CallSettingsPage: React.FC<CallSettingsPageProps> = () => {
             <div className="flex items-start space-x-3">
               <Shield className="w-5 h-5 text-yellow-600 mt-0.5" />
               <div>
-                <h4 className="font-medium text-yellow-800 mb-1">Call Recording Notice</h4>
+                <h4 className="font-medium text-yellow-800 mb-1">
+                  Call Recording Notice
+                </h4>
                 <p className="text-sm text-yellow-700">
-                  Recording calls may require consent from all parties. Please check your local laws and regulations before recording calls.
+                  Recording calls may require consent from all parties. Please
+                  check your local laws and regulations before recording calls.
                 </p>
               </div>
             </div>

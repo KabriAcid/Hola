@@ -214,28 +214,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Settings state - in a real app, these would come from a settings context/store
-  const [settings, setSettings] = useState({
-    messageNotifications: true,
-    readReceipts: true,
-    typingIndicators: true,
-    autoDownloadMedia: false,
-    chatBackup: true,
-    callNotifications: true,
-    autoAnswerCalls: false,
-    callRecording: false,
-    darkMode: false,
-    lastSeenPrivacy: "everyone",
-    profilePhotoPrivacy: "contacts",
-    statusPrivacy: "contacts",
-    twoStepVerification: false,
-  });
-
   if (!user) return null;
-
-  const updateSetting = (key: string, value: boolean | string) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  };
 
   const handleLogout = () => {
     setShowLogoutModal(false);
@@ -257,222 +236,54 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             onEditProfile={() => navigate("/app/settings/profile")}
           />
 
-          {/* Account Settings */}
-          <SettingsSection title="Account">
+          {/* Main Settings Groups */}
+          <SettingsSection title="Settings">
             <SettingsRow
               icon={User}
-              label="Edit Profile"
-              subtitle="Name, photo, bio, email"
+              label="Account Settings"
+              subtitle="Profile, phone number, username"
               onPress={() => navigate("/app/settings/profile")}
               showArrow
             />
             <SettingsRow
-              icon={Phone}
-              label="Phone Number"
-              subtitle={user.phone}
-              onPress={() => navigate("/app/settings/phone")}
+              icon={MessageCircle}
+              label="Chat Settings"
+              subtitle="Notifications, read receipts, media"
+              onPress={() => navigate("/app/settings/chat")}
               showArrow
             />
             <SettingsRow
-              icon={User}
-              label="Username"
-              subtitle={user.username || "Not set"}
-              onPress={() => navigate("/app/settings/username")}
+              icon={PhoneCall}
+              label="Call Settings"
+              subtitle="Ringtones, call quality, recording"
+              onPress={() => navigate("/app/settings/calls")}
               showArrow
             />
             <SettingsRow
               icon={Shield}
               label="Privacy Settings"
+              subtitle="Last seen, blocked contacts, security"
               onPress={() => navigate("/app/settings/privacy")}
               showArrow
             />
-          </SettingsSection>
-
-          {/* Chat & Messaging */}
-          <SettingsSection title="Chat & Messaging">
             <SettingsRow
-              icon={Bell}
-              label="Message Notifications"
-              toggle={settings.messageNotifications}
-              onToggle={(value) => updateSetting("messageNotifications", value)}
-            />
-            <SettingsRow
-              icon={Eye}
-              label="Read Receipts"
-              subtitle="Let others know when you've read their messages"
-              toggle={settings.readReceipts}
-              onToggle={(value) => updateSetting("readReceipts", value)}
-            />
-            <SettingsRow
-              icon={Keyboard}
-              label="Typing Indicators"
-              subtitle="Show when you're typing"
-              toggle={settings.typingIndicators}
-              onToggle={(value) => updateSetting("typingIndicators", value)}
-            />
-            <SettingsRow
-              icon={Download}
-              label="Auto-download Media"
-              subtitle="Automatically download photos and videos"
-              toggle={settings.autoDownloadMedia}
-              onToggle={(value) => updateSetting("autoDownloadMedia", value)}
-            />
-            <SettingsRow
-              icon={Archive}
-              label="Chat Backup"
-              subtitle="Back up your messages to cloud storage"
-              toggle={settings.chatBackup}
-              onToggle={(value) => updateSetting("chatBackup", value)}
-            />
-          </SettingsSection>
-
-          {/* Voice & Calls */}
-          <SettingsSection title="Voice & Calls">
-            <SettingsRow
-              icon={Bell}
-              label="Call Notifications"
-              toggle={settings.callNotifications}
-              onToggle={(value) => updateSetting("callNotifications", value)}
-            />
-            <SettingsRow
-              icon={PhoneIncoming}
-              label="Auto-answer Calls"
-              subtitle="Automatically answer incoming calls"
-              toggle={settings.autoAnswerCalls}
-              onToggle={(value) => updateSetting("autoAnswerCalls", value)}
-            />
-            <SettingsRow
-              icon={PhoneCall}
-              label="Call Recording"
-              subtitle="Record calls (requires permission)"
-              toggle={settings.callRecording}
-              onToggle={(value) => updateSetting("callRecording", value)}
-            />
-            <SettingsRow
-              icon={Music}
-              label="Ringtone Selection"
-              value="Default"
-              onPress={() => navigate("/app/settings/calls")}
+              icon={Settings}
+              label="App Preferences"
+              subtitle="Theme, language, storage"
+              onPress={() => navigate("/app/settings/preferences")}
               showArrow
             />
-            <SettingsRow
-              icon={Mic}
-              label="Microphone Quality"
-              value="High Quality"
-              onPress={() => navigate("/app/settings/calls")}
-              showArrow
-            />
-          </SettingsSection>
-
-          {/* Privacy & Security */}
-          <SettingsSection title="Privacy & Security">
-            <SettingsRow
-              icon={UserX}
-              label="Blocked Contacts"
-              subtitle="Manage blocked users"
-              onPress={() => navigate("/app/settings/blocked")}
-              showArrow
-            />
-            <SettingsRow
-              icon={EyeOff}
-              label="Last Seen Privacy"
-              value="Everyone"
-              onPress={() => navigate("/app/settings/last-seen")}
-              showArrow
-            />
-            <SettingsRow
-              icon={User}
-              label="Profile Photo Privacy"
-              value="My Contacts"
-              onPress={() => navigate("/app/settings/profile-privacy")}
-              showArrow
-            />
-            <SettingsRow
-              icon={MessageCircle}
-              label="Status Privacy"
-              value="My Contacts"
-              onPress={() => navigate("/app/settings/status-privacy")}
-              showArrow
-            />
-            <SettingsRow
-              icon={Lock}
-              label="Two-Step Verification"
-              subtitle="Add extra security to your account"
-              toggle={settings.twoStepVerification}
-              onToggle={(value) => updateSetting("twoStepVerification", value)}
-            />
-          </SettingsSection>
-
-          {/* App Preferences */}
-          <SettingsSection title="App Preferences">
-            <SettingsRow
-              icon={Palette}
-              label="Theme"
-              value="Light"
-              onPress={() => navigate("/app/settings/theme")}
-              showArrow
-            />
-            <SettingsRow
-              icon={Globe}
-              label="Language"
-              value="English"
-              onPress={() => navigate("/app/settings/language")}
-              showArrow
-            />
-            <SettingsRow
-              icon={HardDrive}
-              label="Storage Management"
-              subtitle="Manage app storage and cache"
-              onPress={() => navigate("/app/settings/storage")}
-              showArrow
-            />
-            <SettingsRow
-              icon={BarChart3}
-              label="Data Usage"
-              subtitle="Monitor your data consumption"
-              onPress={() => navigate("/app/settings/data-usage")}
-              showArrow
-            />
-          </SettingsSection>
-
-          {/* Support & Info */}
-          <SettingsSection title="Support & Info">
             <SettingsRow
               icon={HelpCircle}
-              label="Help Center"
+              label="Help & Support"
+              subtitle="Help center, report issues, terms"
               onPress={() => navigate("/app/settings/help")}
               showArrow
             />
-            <SettingsRow
-              icon={MessageSquare}
-              label="Report a Problem"
-              onPress={() => navigate("/app/settings/report")}
-              showArrow
-            />
-            <SettingsRow
-              icon={FileText}
-              label="Terms of Service"
-              onPress={() => navigate("/app/settings/terms")}
-              showArrow
-            />
-            <SettingsRow
-              icon={Shield}
-              label="Privacy Policy"
-              onPress={() => navigate("/app/settings/privacy-policy")}
-              showArrow
-            />
-            <SettingsRow icon={Info} label="App Version" value="v2.1.0" />
           </SettingsSection>
 
           {/* Account Actions */}
-          <SettingsSection title="Account Actions">
-            <SettingsRow
-              icon={UserPlus}
-              label="Switch Account"
-              subtitle="Switch to another account"
-              onPress={() => navigate("/app/settings/switch-account")}
-              showArrow
-            />
+          <SettingsSection title="Account">
             <SettingsRow
               icon={LogOut}
               label="Sign Out"

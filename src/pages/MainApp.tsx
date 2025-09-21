@@ -26,6 +26,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useCall } from "../hooks/useCall";
 import { socketService } from "../socket";
 import { apiService } from "../services/api";
+import { Settings, HelpCircle } from "lucide-react";
 import { Contact, CallLog, Conversation, Message } from "../types";
 
 // Legacy message type for backward compatibility
@@ -550,6 +551,8 @@ export const MainApp: React.FC = () => {
     if (path.startsWith("/app/settings/chat")) return "Chat Settings";
     if (path.startsWith("/app/settings/calls")) return "Call Settings";
     if (path.startsWith("/app/settings/privacy")) return "Privacy Settings";
+    if (path.startsWith("/app/settings/preferences")) return "App Preferences";
+    if (path.startsWith("/app/settings/help")) return "Help & Support";
     if (path.startsWith("/app/settings")) return "Settings";
     return "Hola";
   };
@@ -771,6 +774,54 @@ export const MainApp: React.FC = () => {
                     className="h-full"
                   >
                     <PrivacySettingsPage />
+                  </motion.div>
+                }
+              />
+              <Route
+                path="/settings/preferences"
+                element={
+                  <motion.div
+                    key="settings-preferences"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="h-full"
+                  >
+                    <div className="flex-1 bg-gray-50 p-4">
+                      <div className="text-center py-8">
+                        <Settings className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          App Preferences
+                        </h3>
+                        <p className="text-gray-600">
+                          Theme, language, and storage settings coming soon...
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                }
+              />
+              <Route
+                path="/settings/help"
+                element={
+                  <motion.div
+                    key="settings-help"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="h-full"
+                  >
+                    <div className="flex-1 bg-gray-50 p-4">
+                      <div className="text-center py-8">
+                        <HelpCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          Help & Support
+                        </h3>
+                        <p className="text-gray-600">
+                          Help center and support options coming soon...
+                        </p>
+                      </div>
+                    </div>
                   </motion.div>
                 }
               />

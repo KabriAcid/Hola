@@ -130,7 +130,7 @@ export const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({
       <Header
         title="Edit Profile"
         showBack
-        onBack={() => navigate("/settings")}
+        onBack={() => navigate("/app/settings")}
       />
 
       <div className="px-4 pt-4 pb-20">

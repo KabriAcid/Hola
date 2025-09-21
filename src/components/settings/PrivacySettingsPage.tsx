@@ -139,7 +139,7 @@ export const PrivacySettingsPage: React.FC<PrivacySettingsPageProps> = () => {
       <Header
         title="Privacy & Security"
         showBack
-        onBack={() => navigate("/settings")}
+        onBack={() => navigate("/app/settings")}
       />
 
       <div className="px-4 pt-4 pb-20">

@@ -133,7 +133,7 @@ export const ChatSettingsPage: React.FC<ChatSettingsPageProps> = () => {
       <Header
         title="Chat & Messaging"
         showBack
-        onBack={() => navigate("/settings")}
+        onBack={() => navigate("/app/settings")}
       />
 
       <div className="px-4 pt-4 pb-20">
