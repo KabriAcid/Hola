@@ -20,6 +20,8 @@ import { ProfileSettingsPage } from "../components/settings/ProfileSettingsPage"
 import { ChatSettingsPage } from "../components/settings/ChatSettingsPage";
 import { CallSettingsPage } from "../components/settings/CallSettingsPage";
 import { PrivacySettingsPage } from "../components/settings/PrivacySettingsPage";
+import { AppPreferencesPage } from "../components/settings/AppPreferencesPage";
+import { HelpSupportPage } from "../components/settings/HelpSupportPage";
 import { CallScreen } from "../components/calls/CallScreen";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
@@ -793,17 +795,7 @@ export const MainApp: React.FC = () => {
                     exit={{ opacity: 0, y: -20 }}
                     className="h-full"
                   >
-                    <div className="flex-1 bg-gray-50 p-4">
-                      <div className="text-center py-8">
-                        <Settings className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          App Preferences
-                        </h3>
-                        <p className="text-gray-600">
-                          Theme, language, and storage settings coming soon...
-                        </p>
-                      </div>
-                    </div>
+                    <AppPreferencesPage />
                   </motion.div>
                 }
               />
@@ -817,17 +809,7 @@ export const MainApp: React.FC = () => {
                     exit={{ opacity: 0, y: -20 }}
                     className="h-full"
                   >
-                    <div className="flex-1 bg-gray-50 p-4">
-                      <div className="text-center py-8">
-                        <HelpCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          Help & Support
-                        </h3>
-                        <p className="text-gray-600">
-                          Help center and support options coming soon...
-                        </p>
-                      </div>
-                    </div>
+                    <HelpSupportPage />
                   </motion.div>
                 }
               />

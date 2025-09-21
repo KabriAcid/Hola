@@ -13,8 +13,10 @@ import {
   Shield,
   Headphones,
   Speaker,
+  Check,
 } from "lucide-react";
 import { Header } from "../layout/Header";
+import { Modal } from "../ui/Modal";
 
 interface CallSettingsPageProps {}
 
@@ -105,6 +107,9 @@ const SettingsSection: React.FC<{
 
 export const CallSettingsPage: React.FC<CallSettingsPageProps> = () => {
   const navigate = useNavigate();
+  const [showRingtoneModal, setShowRingtoneModal] = useState(false);
+  const [showMicQualityModal, setShowMicQualityModal] = useState(false);
+  const [selectedRingtone, setSelectedRingtone] = useState("Default");
 
   const [settings, setSettings] = useState({
     callNotifications: true,
@@ -120,6 +125,30 @@ export const CallSettingsPage: React.FC<CallSettingsPageProps> = () => {
     noiseReduction: true,
     echoCancellation: true,
   });
+
+  const ringtones = [
+    { id: "default", name: "Default", file: "default.mp3" },
+    { id: "classic", name: "Classic", file: "classic.mp3" },
+    { id: "modern", name: "Modern", file: "modern.mp3" },
+    { id: "gentle", name: "Gentle Bell", file: "gentle.mp3" },
+    { id: "electronic", name: "Electronic", file: "electronic.mp3" },
+    { id: "nature", name: "Nature Sounds", file: "nature.mp3" },
+  ];
+
+  const micQualities = [
+    { id: "low", name: "Low Quality", description: "Saves bandwidth" },
+    {
+      id: "medium",
+      name: "Medium Quality",
+      description: "Balanced quality and data usage",
+    },
+    { id: "high", name: "High Quality", description: "Best audio quality" },
+    {
+      id: "hd",
+      name: "HD Quality",
+      description: "Crystal clear audio (uses more data)",
+    },
+  ];
 
   const updateSetting = (key: string, value: boolean | string | number) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -147,7 +176,7 @@ export const CallSettingsPage: React.FC<CallSettingsPageProps> = () => {
             icon={Music}
             label="Ringtone"
             value="Default"
-            onPress={() => console.log("Select ringtone")}
+            onPress={() => setShowRingtoneModal(true)}
           />
           <SettingsRow
             icon={Volume2}
@@ -213,7 +242,7 @@ export const CallSettingsPage: React.FC<CallSettingsPageProps> = () => {
             icon={Mic}
             label="Microphone Quality"
             value="High Quality"
-            onPress={() => console.log("Select microphone quality")}
+            onPress={() => setShowMicQualityModal(true)}
           />
           <SettingsRow
             icon={Speaker}
@@ -275,6 +304,69 @@ export const CallSettingsPage: React.FC<CallSettingsPageProps> = () => {
           </ul>
         </motion.div>
       </div>
+
+      {/* Ringtone Selection Modal */}
+      <Modal
+        isOpen={showRingtoneModal}
+        onClose={() => setShowRingtoneModal(false)}
+        title="Choose Ringtone"
+      >
+        <div className="space-y-2">
+          {ringtones.map((ringtone) => (
+            <motion.button
+              key={ringtone.id}
+              onClick={() => {
+                setSelectedRingtone(ringtone.name);
+                setShowRingtoneModal(false);
+              }}
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition-colors"
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="flex items-center space-x-3">
+                <Music className="w-5 h-5 text-gray-600" />
+                <span className="font-medium">{ringtone.name}</span>
+              </div>
+              {selectedRingtone === ringtone.name && (
+                <div className="w-2 h-2 bg-black rounded-full" />
+              )}
+            </motion.button>
+          ))}
+        </div>
+      </Modal>
+
+      {/* Microphone Quality Modal */}
+      <Modal
+        isOpen={showMicQualityModal}
+        onClose={() => setShowMicQualityModal(false)}
+        title="Microphone Quality"
+      >
+        <div className="space-y-2">
+          {micQualities.map((quality) => (
+            <motion.button
+              key={quality.id}
+              onClick={() => {
+                updateSetting("microphoneQuality", quality.id);
+                setShowMicQualityModal(false);
+              }}
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition-colors"
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="flex items-center space-x-3">
+                <Mic className="w-5 h-5 text-gray-600" />
+                <div className="text-left">
+                  <div className="font-medium">{quality.name}</div>
+                  <div className="text-sm text-gray-500">
+                    {quality.description}
+                  </div>
+                </div>
+              </div>
+              {settings.microphoneQuality === quality.id && (
+                <div className="w-2 h-2 bg-black rounded-full" />
+              )}
+            </motion.button>
+          ))}
+        </div>
+      </Modal>
     </div>
   );
 };
