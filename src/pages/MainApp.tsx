@@ -16,6 +16,11 @@ import { ContactForm } from "../components/contacts/ContactForm";
 import { ConversationList } from "../components/messages/ConversationList";
 import { ChatScreen } from "../components/messages/ChatScreen";
 import { SettingsPage } from "../components/settings/SettingsPage";
+import { SettingsPage as SettingsPageNew } from "../components/settings/SettingsPage_new";
+import { ProfileSettingsPage } from "../components/settings/ProfileSettingsPage";
+import { ChatSettingsPage } from "../components/settings/ChatSettingsPage";
+import { CallSettingsPage } from "../components/settings/CallSettingsPage";
+import { PrivacySettingsPage } from "../components/settings/PrivacySettingsPage";
 import { CallScreen } from "../components/calls/CallScreen";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
@@ -543,6 +548,10 @@ export const MainApp: React.FC = () => {
     if (path.startsWith("/app/contacts")) return "Contacts";
     if (path.startsWith("/app/messages")) return "Messages";
     if (path.startsWith("/app/settings")) return "Settings";
+    if (path.startsWith("/app/profile-settings")) return "Profile Settings";
+    if (path.startsWith("/app/chat-settings")) return "Chat Settings";
+    if (path.startsWith("/app/call-settings")) return "Call Settings";
+    if (path.startsWith("/app/privacy-settings")) return "Privacy Settings";
     return "Hola";
   };
 
@@ -695,13 +704,74 @@ export const MainApp: React.FC = () => {
                     exit={{ opacity: 0, y: -20 }}
                     className="h-full"
                   >
-                    <SettingsPage
+                    <SettingsPageNew
                       user={user}
                       onUpdateProfile={async (updates) => {
                         updateUser(updates as any);
                       }}
                       onLogout={logout}
                     />
+                  </motion.div>
+                }
+              />
+              <Route
+                path="/profile-settings"
+                element={
+                  <motion.div
+                    key="profile-settings"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="h-full"
+                  >
+                    <ProfileSettingsPage
+                      user={user}
+                      onUpdateProfile={async (updates) => {
+                        updateUser(updates as any);
+                      }}
+                    />
+                  </motion.div>
+                }
+              />
+              <Route
+                path="/chat-settings"
+                element={
+                  <motion.div
+                    key="chat-settings"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="h-full"
+                  >
+                    <ChatSettingsPage />
+                  </motion.div>
+                }
+              />
+              <Route
+                path="/call-settings"
+                element={
+                  <motion.div
+                    key="call-settings"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="h-full"
+                  >
+                    <CallSettingsPage />
+                  </motion.div>
+                }
+              />
+              <Route
+                path="/privacy-settings"
+                element={
+                  <motion.div
+                    key="privacy-settings"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="h-full"
+                  >
+                    <PrivacySettingsPage />
                   </motion.div>
                 }
               />

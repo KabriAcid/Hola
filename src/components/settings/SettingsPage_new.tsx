@@ -256,7 +256,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         <div className="px-4 pt-4">
           <ProfileHeader
             user={user}
-            onEditProfile={() => navigate("/settings/profile")}
+            onEditProfile={() => navigate("/app/profile-settings")}
           />
 
           {/* Account Settings */}
@@ -265,7 +265,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               icon={User}
               label="Edit Profile"
               subtitle="Name, photo, bio, email"
-              onPress={() => navigate("/settings/profile")}
+              onPress={() => navigate("/app/profile-settings")}
               showArrow
             />
             <SettingsRow
@@ -285,7 +285,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <SettingsRow
               icon={Shield}
               label="Privacy Settings"
-              onPress={() => navigate("/settings/privacy")}
+              onPress={() => navigate("/app/privacy-settings")}
               showArrow
             />
           </SettingsSection>
@@ -354,14 +354,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               icon={Music}
               label="Ringtone Selection"
               value="Default"
-              onPress={() => navigate("/settings/ringtone")}
+              onPress={() => navigate("/app/call-settings")}
               showArrow
             />
             <SettingsRow
               icon={Mic}
               label="Microphone Quality"
               value="High Quality"
-              onPress={() => navigate("/settings/microphone")}
+              onPress={() => navigate("/app/call-settings")}
               showArrow
             />
           </SettingsSection>
