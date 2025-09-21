@@ -11,6 +11,8 @@ import {
   Mail,
   Edit,
   Camera,
+  MessageCircle,
+  Phone,
 } from "lucide-react";
 import { User as UserType } from "../../types";
 import { Avatar } from "../ui/Avatar";
@@ -64,26 +66,26 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       items: [
         {
           icon: User,
-          label: "Edit Profile",
-          action: () => setShowProfileModal(true),
+          label: "Profile Settings",
+          action: () => navigate("/app/settings/profile"),
           showArrow: true,
         },
       ],
     },
     {
-      title: "Preferences",
+      title: "App Preferences",
       items: [
         {
-          icon: Bell,
-          label: "Notifications",
-          action: () => setNotifications(!notifications),
-          toggle: notifications,
+          icon: MessageCircle,
+          label: "Chat Settings",
+          action: () => navigate("/app/settings/chat"),
+          showArrow: true,
         },
         {
-          icon: Moon,
-          label: "Dark Mode",
-          action: () => setDarkMode(!darkMode),
-          toggle: darkMode,
+          icon: Phone,
+          label: "Call Settings",
+          action: () => navigate("/app/settings/calls"),
+          showArrow: true,
         },
       ],
     },
@@ -93,7 +95,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         {
           icon: Shield,
           label: "Privacy Settings",
-          action: () => console.log("Privacy settings"),
+          action: () => navigate("/app/settings/privacy"),
           showArrow: true,
         },
       ],
@@ -121,7 +123,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           className="bg-white p-6 mb-6"
         >
           <div className="flex items-center space-x-4">
-            <Avatar src={`assets/avatars/${user.avatar}`} alt={user.name} size="xl" />
+            <Avatar
+              src={`assets/avatars/${user.avatar}`}
+              alt={user.name}
+              size="xl"
+            />
             <div className="flex-1">
               <h2 className="text-xl font-semibold text-black">{user.name}</h2>
               <p className="text-gray-600">{user.phone}</p>

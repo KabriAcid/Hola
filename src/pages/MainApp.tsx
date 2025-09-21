@@ -16,7 +16,6 @@ import { ContactForm } from "../components/contacts/ContactForm";
 import { ConversationList } from "../components/messages/ConversationList";
 import { ChatScreen } from "../components/messages/ChatScreen";
 import { SettingsPage } from "../components/settings/SettingsPage";
-import { SettingsPage as SettingsPageNew } from "../components/settings/SettingsPage_new";
 import { ProfileSettingsPage } from "../components/settings/ProfileSettingsPage";
 import { ChatSettingsPage } from "../components/settings/ChatSettingsPage";
 import { CallSettingsPage } from "../components/settings/CallSettingsPage";
@@ -547,11 +546,11 @@ export const MainApp: React.FC = () => {
     if (path.startsWith("/app/calls")) return "Recent Calls";
     if (path.startsWith("/app/contacts")) return "Contacts";
     if (path.startsWith("/app/messages")) return "Messages";
+    if (path.startsWith("/app/settings/profile")) return "Profile Settings";
+    if (path.startsWith("/app/settings/chat")) return "Chat Settings";
+    if (path.startsWith("/app/settings/calls")) return "Call Settings";
+    if (path.startsWith("/app/settings/privacy")) return "Privacy Settings";
     if (path.startsWith("/app/settings")) return "Settings";
-    if (path.startsWith("/app/profile-settings")) return "Profile Settings";
-    if (path.startsWith("/app/chat-settings")) return "Chat Settings";
-    if (path.startsWith("/app/call-settings")) return "Call Settings";
-    if (path.startsWith("/app/privacy-settings")) return "Privacy Settings";
     return "Hola";
   };
 
@@ -704,7 +703,7 @@ export const MainApp: React.FC = () => {
                     exit={{ opacity: 0, y: -20 }}
                     className="h-full"
                   >
-                    <SettingsPageNew
+                    <SettingsPage
                       user={user}
                       onUpdateProfile={async (updates) => {
                         updateUser(updates as any);
@@ -715,10 +714,10 @@ export const MainApp: React.FC = () => {
                 }
               />
               <Route
-                path="/profile-settings"
+                path="/settings/profile"
                 element={
                   <motion.div
-                    key="profile-settings"
+                    key="settings-profile"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
@@ -734,10 +733,10 @@ export const MainApp: React.FC = () => {
                 }
               />
               <Route
-                path="/chat-settings"
+                path="/settings/chat"
                 element={
                   <motion.div
-                    key="chat-settings"
+                    key="settings-chat"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
@@ -748,10 +747,10 @@ export const MainApp: React.FC = () => {
                 }
               />
               <Route
-                path="/call-settings"
+                path="/settings/calls"
                 element={
                   <motion.div
-                    key="call-settings"
+                    key="settings-calls"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
@@ -762,10 +761,10 @@ export const MainApp: React.FC = () => {
                 }
               />
               <Route
-                path="/privacy-settings"
+                path="/settings/privacy"
                 element={
                   <motion.div
-                    key="privacy-settings"
+                    key="settings-privacy"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}

@@ -256,7 +256,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         <div className="px-4 pt-4">
           <ProfileHeader
             user={user}
-            onEditProfile={() => navigate("/app/profile-settings")}
+            onEditProfile={() => navigate("/settings/profile")}
           />
 
           {/* Account Settings */}
